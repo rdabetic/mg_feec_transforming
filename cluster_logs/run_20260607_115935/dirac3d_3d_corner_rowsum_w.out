@@ -1,0 +1,51 @@
+Device configuration: omp,cpu
+Memory configuration: host-std
+Loaded config: /cluster/home/rdabetic/decmg/configs/dirac3d_3d_corner_rowsum_w.json
+=================================================
+  Multigrid Convergence Test Configuration
+=================================================
+ Problem Type:    dirac3d
+ Mesh File:       meshes/3d/corner.msh
+ Output File:     out/rowsum/w/dirac/3d/corner.csv
+ MG Cycle Type:   W-Cycle
+ Mass Lumping:    rowsum
+ B-Conditions:    essential
+ Max Refinement:  1
+ Eigenvalues:     1 (Tol: 0.01)
+ GMRES Benchmark: 1 runs (Tol: 1e-06, K-Dim: 20)
+=================================================
+
+======================================================
+  Refinement Level: 1
+======================================================
+ Mesh width (h):  5.0000e-01
+ Total DOFs:      1481
+ Spectral Radii:  0.506483
+ GMRES Avg Iters: 14.00
+------------------------------------------------------
+  MG RESIDUAL DECAY
+------------------------------------------------------
+ Iter    Rel. Residual           Reduction Factor
+------------------------------------------------------
+ 0       7.669978e-02            -----
+ 1       2.260949e-02            0.2948
+ 2       6.341753e-03            0.2805
+ 3       2.560886e-03            0.4038
+ 4       1.125412e-03            0.4395
+ 5       5.265379e-04            0.4679
+ 6       2.546331e-04            0.4836
+ 7       1.253029e-04            0.4921
+ 8       6.216833e-05            0.4961
+ 9       3.097144e-05            0.4982
+ 10      1.546529e-05            0.4993
+ 11      7.734746e-06            0.5001
+ 12      3.873461e-06            0.5008
+ 13      1.942060e-06            0.5014
+ 14      9.747731e-07            0.5019
+ 15      4.897716e-07            0.5024
+------------------------------------------------------
+ Iterations:      16
+ Final Rel. Res.: 4.897716e-07
+ Asymptotic Rate: 0.501916 (Geom. Mean, last 4 iters)
+======================================================
+

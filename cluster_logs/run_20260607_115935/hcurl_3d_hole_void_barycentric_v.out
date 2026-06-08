@@ -1,0 +1,51 @@
+Device configuration: omp,cpu
+Memory configuration: host-std
+Loaded config: /cluster/home/rdabetic/decmg/configs/hcurl_3d_hole_void_barycentric_v.json
+=================================================
+  Multigrid Convergence Test Configuration
+=================================================
+ Problem Type:    hcurl
+ Mesh File:       meshes/3d/hole_void.msh
+ Output File:     out/barycentric/v/veclap/3d/hole_void.csv
+ MG Cycle Type:   V-Cycle
+ Mass Lumping:    barycentric
+ B-Conditions:    essential
+ Max Refinement:  1
+ Eigenvalues:     2 (Tol: 0.01)
+ GMRES Benchmark: 1 runs (Tol: 1e-06, K-Dim: 20)
+=================================================
+
+======================================================
+  Refinement Level: 1
+======================================================
+ Mesh width (h):  1.5811e+00
+ Total DOFs:      1505
+ Spectral Radii:  1 0.568844
+ GMRES Avg Iters: 22.00
+------------------------------------------------------
+  MG RESIDUAL DECAY
+------------------------------------------------------
+ Iter    Rel. Residual           Reduction Factor
+------------------------------------------------------
+ 0       5.881491e-02            -----
+ 1       1.198858e-02            0.2038
+ 2       3.592591e-03            0.2997
+ 3       1.370957e-03            0.3816
+ 4       5.909743e-04            0.4311
+ 5       2.756988e-04            0.4665
+ 6       1.369688e-04            0.4968
+ 7       7.157554e-05            0.5226
+ 8       3.880570e-05            0.5422
+ 9       2.155671e-05            0.5555
+ 10      1.215549e-05            0.5639
+ 11      6.914762e-06            0.5689
+ 12      3.952960e-06            0.5717
+ 13      2.265659e-06            0.5732
+ 14      1.300134e-06            0.5738
+ 15      7.463547e-07            0.5741
+------------------------------------------------------
+ Iterations:      16
+ Final Rel. Res.: 7.463547e-07
+ Asymptotic Rate: 0.573686 (Geom. Mean, last 4 iters)
+======================================================
+

@@ -1,0 +1,22 @@
+{
+  "problem": "dirac3d",
+  "mesh_file": "meshes/3d/cube.msh",
+  "output_file": "out/rowsum/w/dirac/3d/cube.csv",
+  "max_ref": 5,
+  "num_eigs": 1,
+  "runs": 8,
+  "lumping": "rowsum",
+  "cycle": "w",
+  "slurm_mem": "64G",
+  "slurm_time": "02:00:00",
+  "eig_tol": 0.01,
+  "bcond": "essential",
+  "krylov_dim": 20,
+  "gmres_tol": 1e-06,
+  "gmres_maxit": 256,
+  "ignore_gmres_fail": false,
+  "mg_iters": 16,
+  "verbose": true,
+  "pre_smooth_iters": 1,
+  "post_smooth_iters": 1
+}

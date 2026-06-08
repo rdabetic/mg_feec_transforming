@@ -1,0 +1,51 @@
+Device configuration: omp,cpu
+Memory configuration: host-std
+Loaded config: /cluster/home/rdabetic/decmg/configs/hcurl_3d_hole_void_scaledid_v.json
+=================================================
+  Multigrid Convergence Test Configuration
+=================================================
+ Problem Type:    hcurl
+ Mesh File:       meshes/3d/hole_void.msh
+ Output File:     out/scaledid/v/hcurl/3d/hole_void.csv
+ MG Cycle Type:   V-Cycle
+ Mass Lumping:    scaledid
+ B-Conditions:    essential
+ Max Refinement:  1
+ Eigenvalues:     2 (Tol: 0.01)
+ GMRES Benchmark: 1 runs (Tol: 1e-06, K-Dim: 20)
+=================================================
+
+======================================================
+  Refinement Level: 1
+======================================================
+ Mesh width (h):  1.5811e+00
+ Total DOFs:      1505
+ Spectral Radii:  1 0.344515
+ GMRES Avg Iters: 49.00
+------------------------------------------------------
+  MG RESIDUAL DECAY
+------------------------------------------------------
+ Iter    Rel. Residual           Reduction Factor
+------------------------------------------------------
+ 0       5.871206e-02            -----
+ 1       1.050991e-02            0.1790
+ 2       2.573615e-03            0.2449
+ 3       7.954430e-04            0.3091
+ 4       2.373554e-04            0.2984
+ 5       7.725377e-05            0.3255
+ 6       2.450928e-05            0.3173
+ 7       8.033261e-06            0.3278
+ 8       2.612764e-06            0.3252
+ 9       8.591548e-07            0.3288
+ 10      2.824365e-07            0.3287
+ 11      9.322183e-08            0.3301
+ 12      3.082283e-08            0.3306
+ 13      1.021226e-08            0.3313
+ 14      3.389743e-09            0.3319
+ 15      1.126785e-09            0.3324
+------------------------------------------------------
+ Iterations:      16
+ Final Rel. Res.: 1.126785e-09
+ Asymptotic Rate: 0.331886 (Geom. Mean, last 4 iters)
+======================================================
+

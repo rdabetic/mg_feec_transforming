@@ -1,0 +1,51 @@
+Device configuration: omp,cpu
+Memory configuration: host-std
+Loaded config: /cluster/home/rdabetic/decmg/configs/mag_3d_corner_rowsum_v.json
+=================================================
+  Multigrid Convergence Test Configuration
+=================================================
+ Problem Type:    mag
+ Mesh File:       meshes/3d/corner.msh
+ Output File:     out/rowsum/v/mag/3d/corner.csv
+ MG Cycle Type:   V-Cycle
+ Mass Lumping:    rowsum
+ B-Conditions:    essential
+ Max Refinement:  1
+ Eigenvalues:     1 (Tol: 0.01)
+ GMRES Benchmark: 1 runs (Tol: 1e-06, K-Dim: 20)
+=================================================
+
+======================================================
+  Refinement Level: 1
+======================================================
+ Mesh width (h):  5.0000e-01
+ Total DOFs:      545
+ Spectral Radii:  0.368254
+ GMRES Avg Iters: 13.00
+------------------------------------------------------
+  MG RESIDUAL DECAY
+------------------------------------------------------
+ Iter    Rel. Residual           Reduction Factor
+------------------------------------------------------
+ 0       6.410021e-02            -----
+ 1       9.923025e-03            0.1548
+ 2       2.499371e-03            0.2519
+ 3       8.122480e-04            0.3250
+ 4       2.774837e-04            0.3416
+ 5       9.824156e-05            0.3540
+ 6       3.539343e-05            0.3603
+ 7       1.287391e-05            0.3637
+ 8       4.703552e-06            0.3654
+ 9       1.721880e-06            0.3661
+ 10      6.307884e-07            0.3663
+ 11      2.311145e-07            0.3664
+ 12      8.467166e-08            0.3664
+ 13      3.101653e-08            0.3663
+ 14      1.136052e-08            0.3663
+ 15      4.160722e-09            0.3662
+------------------------------------------------------
+ Iterations:      16
+ Final Rel. Res.: 4.160722e-09
+ Asymptotic Rate: 0.366277 (Geom. Mean, last 4 iters)
+======================================================
+

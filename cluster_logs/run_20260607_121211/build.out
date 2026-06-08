@@ -1,0 +1,51 @@
+-- ✅ Found System Eigen (Version 3.4.0)
+-- Found Boost: /cluster/software/stacks/2025-06/linux-ubuntu22.04-x86_64_v3/gcc-12.2.0/boost-1.86.0-ogejqlakcweui7frqfoseh5u3tdon4si/lib/cmake/Boost-1.86.0/BoostConfig.cmake (found version "1.86.0")
+-- ✅ Found System Boost: 1.86.0
+-- CMake version: 3.30.5
+-- Loading USER_CONFIG = /cluster/home/rdabetic/decmg/extern/mfem/config/user.cmake (NOTFOUND)
+-- USE_XSDK_DEFAULTS = 'OFF'
+-- Floating-point precision: MFEM_PRECISION = double
+-- MFEM: using package OPENMP
+-- MFEM: using package POSIXCLOCKS
+-- MFEM shared library: BUILD_SHARED_LIBS = OFF
+-- MFEM build type: CMAKE_BUILD_TYPE = Release
+-- MFEM version: v4.9.1
+-- MFEM git string: tags/v4.9-89-g3216d86e6c5a29ee4de5b107e9e28a43f1ba1987
+-- TPL_INCLUDE_DIRS = 
+-- Writing substitute header --> "mfem.hpp"
+-- Writing substitute header --> "mfem-performance.hpp"
+-- performance_ex1: add flags "-march=native -Wall -pedantic --param max-completely-peel-times=3"
+-- Could NOT find Doxygen (missing: DOXYGEN_EXECUTABLE) 
+-- CMAKE_INSTALL_PREFIX = /usr/local
+-- Found Boost: /cluster/software/stacks/2025-06/linux-ubuntu22.04-x86_64_v3/gcc-12.2.0/boost-1.86.0-ogejqlakcweui7frqfoseh5u3tdon4si/lib/cmake/Boost-1.86.0/BoostConfig.cmake (found version "1.86.0") found components: program_options
+-- Configuring done (0.7s)
+-- Generating done (3.6s)
+-- Build files have been written to: /cluster/home/rdabetic/decmg/release
+[  0%] Built target gtest
+[  2%] Built target gtest_main
+[  4%] Built target gmock
+[  4%] Built target gmock_main
+[ 81%] Built target mfem
+[ 81%] Built target SPECTRA_INTERFACE
+[ 81%] Built target INCIDENCE
+[ 83%] Built target TRANSFER
+[ 85%] Built target MULTIGRID
+[ 85%] Built target testIncidence
+[ 87%] Built target MESH
+[ 87%] Built target DIRAC_2D
+[ 87%] Built target testOperator
+[ 87%] Built target DIRAC_3D
+[ 87%] Built target MAGNETOSTATICS
+[ 89%] Built target HCURL_LAPLACIAN
+[ 91%] Built target testSpectra
+[ 91%] Built target testMG
+[ 93%] Built target testDiracCVG2D
+[ 93%] Built target testDirac2D
+[ 93%] Built target testLaplaceCVG3D
+[ 95%] Built target testLaplace
+[ 97%] Built target testMagnetostatics
+[ 97%] Built target testMagnetostaticsCVG3D
+[ 97%] Built target testDirac3D
+[ 97%] Built target testDiracMG
+[ 97%] Built target testDiracCVG3D
+[100%] Built target cvg

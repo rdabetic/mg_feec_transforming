@@ -1,0 +1,51 @@
+Device configuration: omp,cpu
+Memory configuration: host-std
+Loaded config: /cluster/home/rdabetic/decmg/configs/mag_3d_corner_barycentric_v.json
+=================================================
+  Multigrid Convergence Test Configuration
+=================================================
+ Problem Type:    mag
+ Mesh File:       meshes/3d/corner.msh
+ Output File:     out/barycentric/v/mag/3d/corner.csv
+ MG Cycle Type:   V-Cycle
+ Mass Lumping:    barycentric
+ B-Conditions:    essential
+ Max Refinement:  1
+ Eigenvalues:     1 (Tol: 0.01)
+ GMRES Benchmark: 1 runs (Tol: 1e-06, K-Dim: 20)
+=================================================
+
+======================================================
+  Refinement Level: 1
+======================================================
+ Mesh width (h):  5.0000e-01
+ Total DOFs:      545
+ Spectral Radii:  0.370789
+ GMRES Avg Iters: 14.00
+------------------------------------------------------
+  MG RESIDUAL DECAY
+------------------------------------------------------
+ Iter    Rel. Residual           Reduction Factor
+------------------------------------------------------
+ 0       7.333107e-02            -----
+ 1       1.226442e-02            0.1672
+ 2       2.894501e-03            0.2360
+ 3       8.704895e-04            0.3007
+ 4       2.794982e-04            0.3211
+ 5       9.399983e-05            0.3363
+ 6       3.256861e-05            0.3465
+ 7       1.150507e-05            0.3533
+ 8       4.113431e-06            0.3575
+ 9       1.481342e-06            0.3601
+ 10      5.357069e-07            0.3616
+ 11      1.941883e-07            0.3625
+ 12      7.048110e-08            0.3630
+ 13      2.559797e-08            0.3632
+ 14      9.299731e-09            0.3633
+ 15      3.379007e-09            0.3633
+------------------------------------------------------
+ Iterations:      16
+ Final Rel. Res.: 3.379007e-09
+ Asymptotic Rate: 0.363278 (Geom. Mean, last 4 iters)
+======================================================
+

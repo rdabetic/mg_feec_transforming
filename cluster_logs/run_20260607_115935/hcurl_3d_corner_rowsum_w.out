@@ -1,0 +1,51 @@
+Device configuration: omp,cpu
+Memory configuration: host-std
+Loaded config: /cluster/home/rdabetic/decmg/configs/hcurl_3d_corner_rowsum_w.json
+=================================================
+  Multigrid Convergence Test Configuration
+=================================================
+ Problem Type:    hcurl
+ Mesh File:       meshes/3d/corner.msh
+ Output File:     out/rowsum/w/veclap/3d/corner.csv
+ MG Cycle Type:   W-Cycle
+ Mass Lumping:    rowsum
+ B-Conditions:    essential
+ Max Refinement:  1
+ Eigenvalues:     1 (Tol: 0.01)
+ GMRES Benchmark: 1 runs (Tol: 1e-06, K-Dim: 20)
+=================================================
+
+======================================================
+  Refinement Level: 1
+======================================================
+ Mesh width (h):  5.0000e-01
+ Total DOFs:      545
+ Spectral Radii:  0.364967
+ GMRES Avg Iters: 14.00
+------------------------------------------------------
+  MG RESIDUAL DECAY
+------------------------------------------------------
+ Iter    Rel. Residual           Reduction Factor
+------------------------------------------------------
+ 0       5.589777e-02            -----
+ 1       9.285588e-03            0.1661
+ 2       2.357208e-03            0.2539
+ 3       7.528200e-04            0.3194
+ 4       2.438368e-04            0.3239
+ 5       8.363931e-05            0.3430
+ 6       2.920764e-05            0.3492
+ 7       1.035050e-05            0.3544
+ 8       3.693898e-06            0.3569
+ 9       1.325274e-06            0.3588
+ 10      4.771965e-07            0.3601
+ 11      1.723023e-07            0.3611
+ 12      6.234454e-08            0.3618
+ 13      2.259494e-08            0.3624
+ 14      8.199186e-09            0.3629
+ 15      2.978212e-09            0.3632
+------------------------------------------------------
+ Iterations:      16
+ Final Rel. Res.: 2.978212e-09
+ Asymptotic Rate: 0.362843 (Geom. Mean, last 4 iters)
+======================================================
+

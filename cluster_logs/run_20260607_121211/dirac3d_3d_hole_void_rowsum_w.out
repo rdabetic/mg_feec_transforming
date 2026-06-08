@@ -1,0 +1,51 @@
+Device configuration: omp,cpu
+Memory configuration: host-std
+Loaded config: /cluster/home/rdabetic/decmg/configs/dirac3d_3d_hole_void_rowsum_w.json
+=================================================
+  Multigrid Convergence Test Configuration
+=================================================
+ Problem Type:    dirac3d
+ Mesh File:       meshes/3d/hole_void.msh
+ Output File:     out/rowsum/w/dirac/3d/hole_void.csv
+ MG Cycle Type:   W-Cycle
+ Mass Lumping:    rowsum
+ B-Conditions:    essential
+ Max Refinement:  1
+ Eigenvalues:     3 (Tol: 0.01)
+ GMRES Benchmark: 1 runs (Tol: 1e-06, K-Dim: 20)
+=================================================
+
+======================================================
+  Refinement Level: 1
+======================================================
+ Mesh width (h):  1.5811e+00
+ Total DOFs:      4305
+ Spectral Radii:  1 1 0.655571
+ GMRES Avg Iters: 26.00
+------------------------------------------------------
+  MG RESIDUAL DECAY
+------------------------------------------------------
+ Iter    Rel. Residual           Reduction Factor
+------------------------------------------------------
+ 0       7.722013e-02            -----
+ 1       2.165165e-02            0.2804
+ 2       8.253974e-03            0.3812
+ 3       3.648080e-03            0.4420
+ 4       1.708857e-03            0.4684
+ 5       8.399972e-04            0.4916
+ 6       4.285466e-04            0.5102
+ 7       2.252172e-04            0.5255
+ 8       1.211103e-04            0.5377
+ 9       6.628063e-05            0.5473
+ 10      3.676963e-05            0.5548
+ 11      2.062093e-05            0.5608
+ 12      1.167028e-05            0.5659
+ 13      6.658015e-06            0.5705
+ 14      3.826871e-06            0.5748
+ 15      2.215497e-06            0.5789
+------------------------------------------------------
+ Iterations:      16
+ Final Rel. Res.: 2.215497e-06
+ Asymptotic Rate: 0.574729 (Geom. Mean, last 4 iters)
+======================================================
+

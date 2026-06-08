@@ -1,0 +1,51 @@
+Device configuration: omp,cpu
+Memory configuration: host-std
+Loaded config: /cluster/home/rdabetic/decmg/configs/hcurl_3d_hole_void_rowsum_w.json
+=================================================
+  Multigrid Convergence Test Configuration
+=================================================
+ Problem Type:    hcurl
+ Mesh File:       meshes/3d/hole_void.msh
+ Output File:     out/rowsum/w/veclap/3d/hole_void.csv
+ MG Cycle Type:   W-Cycle
+ Mass Lumping:    rowsum
+ B-Conditions:    essential
+ Max Refinement:  1
+ Eigenvalues:     2 (Tol: 0.01)
+ GMRES Benchmark: 1 runs (Tol: 1e-06, K-Dim: 20)
+=================================================
+
+======================================================
+  Refinement Level: 1
+======================================================
+ Mesh width (h):  1.5811e+00
+ Total DOFs:      1505
+ Spectral Radii:  1 0.432817
+ GMRES Avg Iters: 22.00
+------------------------------------------------------
+  MG RESIDUAL DECAY
+------------------------------------------------------
+ Iter    Rel. Residual           Reduction Factor
+------------------------------------------------------
+ 0       5.114563e-02            -----
+ 1       9.727781e-03            0.1902
+ 2       2.951822e-03            0.3034
+ 3       9.857599e-04            0.3339
+ 4       3.462049e-04            0.3512
+ 5       1.249215e-04            0.3608
+ 6       4.601693e-05            0.3684
+ 7       1.722062e-05            0.3742
+ 8       6.538042e-06            0.3797
+ 9       2.514171e-06            0.3845
+ 10      9.782235e-07            0.3891
+ 11      3.846857e-07            0.3932
+ 12      1.527456e-07            0.3971
+ 13      6.118009e-08            0.4005
+ 14      2.469730e-08            0.4037
+ 15      1.004034e-08            0.4065
+------------------------------------------------------
+ Iterations:      16
+ Final Rel. Res.: 1.004034e-08
+ Asymptotic Rate: 0.403577 (Geom. Mean, last 4 iters)
+======================================================
+

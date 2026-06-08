@@ -1,0 +1,18 @@
+[submodule "extern/eigen"]
+	path = extern/eigen
+	url = https://gitlab.com/libeigen/eigen.git
+	branch = 3.4.0
+
+[submodule "extern/spectra"]
+	path = extern/spectra
+	url = https://github.com/yixuan/spectra.git
+	# After adding, checkout tag v1.2.0
+
+[submodule "extern/mfem"]
+	path = extern/mfem
+	url = https://github.com/mfem/mfem.git
+	# After adding, checkout tag v4.8
+ 
+[submodule "extern/googletest"]
+	path = extern/googletest
+	url = https://github.com/google/googletest.git

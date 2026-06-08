@@ -1,0 +1,45 @@
+Language: Cpp
+BasedOnStyle: Google
+
+# --- Core Layout ---
+ColumnLimit: 80
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+
+# --- Parameter Alignment (The "Vertical List" look) ---
+# Prevents packing multiple parameters on a single line
+BinPackParameters: false
+BinPackArguments: true
+
+# Forces the first parameter to start on a new line if they don't all fit
+# 'AlwaysBreak' is best for strict vertical alignment
+AlignAfterOpenBracket: AlwaysBreak
+
+# Ensures that if a wrap happens, it doesn't try to put all parameters on the next line together
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowAllArgumentsOnNextLine: false
+
+# --- Braces and Control Flow ---
+BreakBeforeBraces: Allman
+RemoveBracesLLVM: true
+AllowShortBlocksOnASingleLine: Never
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+# --- Alignment and Spacing ---
+AccessModifierOffset: -4
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+
+# --- Templates ---
+AlwaysBreakTemplateDeclarations: Yes
+
+# --- Inclusion ---
+SortIncludes: true
+
+# --- Refinements ---
+DerivePointerAlignment: false
+PointerAlignment: Left
+SpaceAfterCStyleCast: true
+SpacesBeforeTrailingComments: 2

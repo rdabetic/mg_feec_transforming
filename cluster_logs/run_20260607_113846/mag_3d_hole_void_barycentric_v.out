@@ -1,0 +1,51 @@
+Device configuration: omp,cpu
+Memory configuration: host-std
+Loaded config: /cluster/home/rdabetic/decmg/configs/mag_3d_hole_void_barycentric_v.json
+=================================================
+  Multigrid Convergence Test Configuration
+=================================================
+ Problem Type:    mag
+ Mesh File:       meshes/3d/hole_void.msh
+ Output File:     out/barycentric/v/mag/3d/hole_void.csv
+ MG Cycle Type:   V-Cycle
+ Mass Lumping:    barycentric
+ B-Conditions:    essential
+ Max Refinement:  1
+ Eigenvalues:     2 (Tol: 0.01)
+ GMRES Benchmark: 1 runs (Tol: 1e-06, K-Dim: 20)
+=================================================
+
+======================================================
+  Refinement Level: 1
+======================================================
+ Mesh width (h):  1.5811e+00
+ Total DOFs:      1505
+ Spectral Radii:  1 0.55785
+ GMRES Avg Iters: 23.00
+------------------------------------------------------
+  MG RESIDUAL DECAY
+------------------------------------------------------
+ Iter    Rel. Residual           Reduction Factor
+------------------------------------------------------
+ 0       8.753784e-02            -----
+ 1       1.805694e-02            0.2063
+ 2       6.808373e-03            0.3771
+ 3       2.935010e-03            0.4311
+ 4       1.344661e-03            0.4581
+ 5       6.399784e-04            0.4759
+ 6       3.126104e-04            0.4885
+ 7       1.558164e-04            0.4984
+ 8       7.901035e-05            0.5071
+ 9       4.067591e-05            0.5148
+ 10      2.122431e-05            0.5218
+ 11      1.120647e-05            0.5280
+ 12      5.977978e-06            0.5334
+ 13      3.216824e-06            0.5381
+ 14      1.743693e-06            0.5421
+ 15      9.508780e-07            0.5453
+------------------------------------------------------
+ Iterations:      16
+ Final Rel. Res.: 9.508780e-07
+ Asymptotic Rate: 0.541822 (Geom. Mean, last 4 iters)
+======================================================
+

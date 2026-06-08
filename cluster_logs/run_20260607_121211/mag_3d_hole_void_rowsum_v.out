@@ -1,0 +1,51 @@
+Device configuration: omp,cpu
+Memory configuration: host-std
+Loaded config: /cluster/home/rdabetic/decmg/configs/mag_3d_hole_void_rowsum_v.json
+=================================================
+  Multigrid Convergence Test Configuration
+=================================================
+ Problem Type:    mag
+ Mesh File:       meshes/3d/hole_void.msh
+ Output File:     out/rowsum/v/mag/3d/hole_void.csv
+ MG Cycle Type:   V-Cycle
+ Mass Lumping:    rowsum
+ B-Conditions:    essential
+ Max Refinement:  1
+ Eigenvalues:     2 (Tol: 0.01)
+ GMRES Benchmark: 1 runs (Tol: 1e-06, K-Dim: 20)
+=================================================
+
+======================================================
+  Refinement Level: 1
+======================================================
+ Mesh width (h):  1.5811e+00
+ Total DOFs:      1505
+ Spectral Radii:  1 0.433545
+ GMRES Avg Iters: 22.00
+------------------------------------------------------
+  MG RESIDUAL DECAY
+------------------------------------------------------
+ Iter    Rel. Residual           Reduction Factor
+------------------------------------------------------
+ 0       7.747257e-02            -----
+ 1       1.690818e-02            0.2182
+ 2       5.352194e-03            0.3165
+ 3       1.830891e-03            0.3421
+ 4       6.546090e-04            0.3575
+ 5       2.401224e-04            0.3668
+ 6       9.008164e-05            0.3751
+ 7       3.440460e-05            0.3819
+ 8       1.333929e-05            0.3877
+ 9       5.235054e-06            0.3925
+ 10      2.074294e-06            0.3962
+ 11      8.279530e-07            0.3991
+ 12      3.323035e-07            0.4014
+ 13      1.339208e-07            0.4030
+ 14      5.413776e-08            0.4043
+ 15      2.193729e-08            0.4052
+------------------------------------------------------
+ Iterations:      16
+ Final Rel. Res.: 2.193729e-08
+ Asymptotic Rate: 0.404156 (Geom. Mean, last 4 iters)
+======================================================
+

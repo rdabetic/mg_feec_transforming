@@ -1,0 +1,51 @@
+Device configuration: omp,cpu
+Memory configuration: host-std
+Loaded config: /cluster/home/rdabetic/decmg/configs/mag_3d_hole_void_scaledid_v.json
+=================================================
+  Multigrid Convergence Test Configuration
+=================================================
+ Problem Type:    mag
+ Mesh File:       meshes/3d/hole_void.msh
+ Output File:     out/scaledid/v/mag/3d/hole_void.csv
+ MG Cycle Type:   V-Cycle
+ Mass Lumping:    scaledid
+ B-Conditions:    essential
+ Max Refinement:  1
+ Eigenvalues:     2 (Tol: 0.01)
+ GMRES Benchmark: 1 runs (Tol: 1e-06, K-Dim: 20)
+=================================================
+
+======================================================
+  Refinement Level: 1
+======================================================
+ Mesh width (h):  1.5811e+00
+ Total DOFs:      1505
+ Spectral Radii:  1 0.345833
+ GMRES Avg Iters: 47.00
+------------------------------------------------------
+  MG RESIDUAL DECAY
+------------------------------------------------------
+ Iter    Rel. Residual           Reduction Factor
+------------------------------------------------------
+ 0       6.549102e-02            -----
+ 1       1.125021e-02            0.1718
+ 2       2.678016e-03            0.2380
+ 3       7.279494e-04            0.2718
+ 4       2.082857e-04            0.2861
+ 5       6.137452e-05            0.2947
+ 6       1.841434e-05            0.3000
+ 7       5.596040e-06            0.3039
+ 8       1.720410e-06            0.3074
+ 9       5.352928e-07            0.3111
+ 10      1.686758e-07            0.3151
+ 11      5.385021e-08            0.3193
+ 12      1.741530e-08            0.3234
+ 13      5.701156e-09            0.3274
+ 14      1.886912e-09            0.3310
+ 15      6.304290e-10            0.3341
+------------------------------------------------------
+ Iterations:      16
+ Final Rel. Res.: 6.304290e-10
+ Asymptotic Rate: 0.330802 (Geom. Mean, last 4 iters)
+======================================================
+

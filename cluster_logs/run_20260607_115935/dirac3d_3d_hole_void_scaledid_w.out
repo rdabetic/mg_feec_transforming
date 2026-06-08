@@ -1,0 +1,51 @@
+Device configuration: omp,cpu
+Memory configuration: host-std
+Loaded config: /cluster/home/rdabetic/decmg/configs/dirac3d_3d_hole_void_scaledid_w.json
+=================================================
+  Multigrid Convergence Test Configuration
+=================================================
+ Problem Type:    dirac3d
+ Mesh File:       meshes/3d/hole_void.msh
+ Output File:     out/scaledid/w/dirac/3d/hole_void.csv
+ MG Cycle Type:   W-Cycle
+ Mass Lumping:    scaledid
+ B-Conditions:    essential
+ Max Refinement:  1
+ Eigenvalues:     3 (Tol: 0.01)
+ GMRES Benchmark: 1 runs (Tol: 1e-06, K-Dim: 20)
+=================================================
+
+======================================================
+  Refinement Level: 1
+======================================================
+ Mesh width (h):  1.5811e+00
+ Total DOFs:      4305
+ Spectral Radii:  1 1 0.459852
+ GMRES Avg Iters: 84.00
+------------------------------------------------------
+  MG RESIDUAL DECAY
+------------------------------------------------------
+ Iter    Rel. Residual           Reduction Factor
+------------------------------------------------------
+ 0       1.064559e-01            -----
+ 1       2.533959e-02            0.2380
+ 2       8.560765e-03            0.3378
+ 3       3.413102e-03            0.3987
+ 4       1.387311e-03            0.4065
+ 5       5.817786e-04            0.4194
+ 6       2.479318e-04            0.4262
+ 7       1.069598e-04            0.4314
+ 8       4.655077e-05            0.4352
+ 9       2.040121e-05            0.4383
+ 10      8.992537e-06            0.4408
+ 11      3.983521e-06            0.4430
+ 12      1.772446e-06            0.4449
+ 13      7.917987e-07            0.4467
+ 14      3.550027e-07            0.4483
+ 15      1.596880e-07            0.4498
+------------------------------------------------------
+ Iterations:      16
+ Final Rel. Res.: 1.596880e-07
+ Asymptotic Rate: 0.448298 (Geom. Mean, last 4 iters)
+======================================================
+

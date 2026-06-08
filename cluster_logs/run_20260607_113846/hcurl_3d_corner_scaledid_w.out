@@ -1,0 +1,51 @@
+Device configuration: omp,cpu
+Memory configuration: host-std
+Loaded config: /cluster/home/rdabetic/decmg/configs/hcurl_3d_corner_scaledid_w.json
+=================================================
+  Multigrid Convergence Test Configuration
+=================================================
+ Problem Type:    hcurl
+ Mesh File:       meshes/3d/corner.msh
+ Output File:     out/scaledid/w/hcurl/3d/corner.csv
+ MG Cycle Type:   W-Cycle
+ Mass Lumping:    scaledid
+ B-Conditions:    essential
+ Max Refinement:  1
+ Eigenvalues:     1 (Tol: 0.01)
+ GMRES Benchmark: 1 runs (Tol: 1e-06, K-Dim: 20)
+=================================================
+
+======================================================
+  Refinement Level: 1
+======================================================
+ Mesh width (h):  5.0000e-01
+ Total DOFs:      545
+ Spectral Radii:  0.327499
+ GMRES Avg Iters: 20.00
+------------------------------------------------------
+  MG RESIDUAL DECAY
+------------------------------------------------------
+ Iter    Rel. Residual           Reduction Factor
+------------------------------------------------------
+ 0       5.742458e-02            -----
+ 1       7.956198e-03            0.1386
+ 2       1.517544e-03            0.1907
+ 3       3.521646e-04            0.2321
+ 4       9.092344e-05            0.2582
+ 5       2.506218e-05            0.2756
+ 6       7.238658e-06            0.2888
+ 7       2.146312e-06            0.2965
+ 8       6.453979e-07            0.3007
+ 9       1.955475e-07            0.3030
+ 10      5.951237e-08            0.3043
+ 11      1.816600e-08            0.3052
+ 12      5.557912e-09            0.3060
+ 13      1.703748e-09            0.3065
+ 14      5.231551e-10            0.3071
+ 15      1.608760e-10            0.3075
+------------------------------------------------------
+ Iterations:      16
+ Final Rel. Res.: 1.608760e-10
+ Asymptotic Rate: 0.307039 (Geom. Mean, last 4 iters)
+======================================================
+

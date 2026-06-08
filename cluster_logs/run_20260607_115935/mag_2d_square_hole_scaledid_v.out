@@ -1,0 +1,90 @@
+Device configuration: omp,cpu
+Memory configuration: host-std
+Loaded config: /cluster/home/rdabetic/decmg/configs/mag_2d_square_hole_scaledid_v.json
+=================================================
+  Multigrid Convergence Test Configuration
+=================================================
+ Problem Type:    mag
+ Mesh File:       meshes/2d/square_hole.msh
+ Output File:     out/scaledid/v/mag/2d/square_hole.csv
+ MG Cycle Type:   V-Cycle
+ Mass Lumping:    scaledid
+ B-Conditions:    essential
+ Max Refinement:  2
+ Eigenvalues:     2 (Tol: 0.01)
+ GMRES Benchmark: 1 runs (Tol: 1e-06, K-Dim: 20)
+=================================================
+
+
+Gmsh reader: all element attributes were zero.
+MFEM only supports positive element attributes.
+Setting element attributes to 1.
+
+======================================================
+  Refinement Level: 1
+======================================================
+ Mesh width (h):  8.8388e-02
+ Total DOFs:      720
+ Spectral Radii:  1 0.151832
+ GMRES Avg Iters: 10.00
+------------------------------------------------------
+  MG RESIDUAL DECAY
+------------------------------------------------------
+ Iter    Rel. Residual           Reduction Factor
+------------------------------------------------------
+ 0       8.810147e-02            -----
+ 1       9.943587e-03            0.1129
+ 2       1.423364e-03            0.1431
+ 3       1.989530e-04            0.1398
+ 4       2.997980e-05            0.1507
+ 5       4.325302e-06            0.1443
+ 6       6.223436e-07            0.1439
+ 7       1.001190e-07            0.1609
+ 8       1.833480e-08            0.1831
+ 9       2.947340e-09            0.1608
+ 10      4.222128e-10            0.1433
+ 11      6.101169e-11            0.1445
+ 12      9.196933e-12            0.1507
+ 13      1.461498e-12            0.1589
+ 14      2.384006e-13            0.1631
+ 15      3.585824e-14            0.1504
+------------------------------------------------------
+ Iterations:      16
+ Final Rel. Res.: 3.585824e-14
+ Asymptotic Rate: 0.157392 (Geom. Mean, last 4 iters)
+======================================================
+
+======================================================
+  Refinement Level: 2
+======================================================
+ Mesh width (h):  4.4194e-02
+ Total DOFs:      2720
+ Spectral Radii:  1 0.192467
+ GMRES Avg Iters: 11.00
+------------------------------------------------------
+  MG RESIDUAL DECAY
+------------------------------------------------------
+ Iter    Rel. Residual           Reduction Factor
+------------------------------------------------------
+ 0       9.747047e-02            -----
+ 1       1.217693e-02            0.1249
+ 2       1.656435e-03            0.1360
+ 3       2.422969e-04            0.1463
+ 4       4.608395e-05            0.1902
+ 5       7.772990e-06            0.1687
+ 6       1.556659e-06            0.2003
+ 7       3.094809e-07            0.1988
+ 8       5.483978e-08            0.1772
+ 9       9.158288e-09            0.1670
+ 10      1.510372e-09            0.1649
+ 11      2.743011e-10            0.1816
+ 12      5.663012e-11            0.2065
+ 13      1.235366e-11            0.2181
+ 14      2.713586e-12            0.2197
+ 15      5.805559e-13            0.2139
+------------------------------------------------------
+ Iterations:      16
+ Final Rel. Res.: 5.805559e-13
+ Asymptotic Rate: 0.217236 (Geom. Mean, last 4 iters)
+======================================================
+
