@@ -1,5 +1,7 @@
 # Multigrid for FEEC using Mass-Lumping and Transforming Smoothers
 
+Clone with `--recursive` to get all the submodules.
+
 The main driver is `targets/cvg.cpp`, which is built as the `cvg` executable.
 
 ## Build requirements
