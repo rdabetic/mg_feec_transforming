@@ -31,7 +31,7 @@ def get_title_from_path(path):
     
     prob_str = "Unknown Problem"
     if any("veclap" in p or "vector" in p or "laplac" in p for p in parts): 
-        prob_str = "HCurl Laplacian"
+        prob_str = "1-form Hodge Laplacian"
     elif any("dirac" in p for p in parts): 
         prob_str = "Dirac"
     elif any("mag" in p for p in parts): 
