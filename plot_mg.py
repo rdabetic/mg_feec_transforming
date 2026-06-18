@@ -244,7 +244,7 @@ def plot_single_mesh_1x2(csv_file, msh_file, target_dir, style_dict):
         
         if x_dec is not None and not y_dec.isna().all():
             l1 = ax1.plot(x_dec, y_dec, color='tab:blue', marker='o', linestyle='-', linewidth=2.5, markersize=10, 
-                          label=f"Spectral Radii ($n_\\mathrm{{{{ev}}}}={k}$)" if k is not None else "Spectral Radii")
+                          label=f"$n_\\mathrm{{{{ev}}}}$-largest EV (mag.) ($n_\\mathrm{{{{ev}}}}={k}$)" if k is not None else "$n_\\mathrm{{{{ev}}}}$-largest EV (mag.)")
             lines.extend(l1); labels.append(l1[0].get_label())
             ax1.set_ylabel(r"$|\lambda|$", fontsize=22, color='tab:blue') 
             ax1.set_ylim(0.0, 1.02)
@@ -288,7 +288,7 @@ def plot_dec(directory_path, files, output_dir, style_dict):
     if not plotted:
         plt.close(fig)
         return
-    ax.set_title(f"{get_title_from_path(directory_path)} - Spectral Radii", fontsize=16, pad=15)
+    ax.set_title(f"{get_title_from_path(directory_path)} - $n_\\mathrm{{{{ev}}}}$-largest EV (mag.)", fontsize=16, pad=15)
     ax.set_xlabel("Refinement Level", fontsize=14)
     ax.set_ylim(0.0, 1.02)
     ax.grid(True, linestyle='--', alpha=0.5)
@@ -342,12 +342,12 @@ def plot_summary_2x2(prob_dir, csvs_2d, csvs_3d, output_dir, style_dict):
             ax.tick_params(labelsize=11)
             
     plot_on_ax(axs[0, 0], csvs_2d, "dec")
-    axs[0, 0].set_title(r"$\mathbf{2D}$" + "\n\nSpectral Radii", fontsize=15)
+    axs[0, 0].set_title(r"$\mathbf{2D}$" + "\n\n$n_\\mathrm{{{{ev}}}}$-largest EV (mag.)", fontsize=15)
     axs[0, 0].set_ylim(0.0, 1.02)
     axs[0, 0].set_ylabel(r"$|\lambda|$", fontsize=13)
     
     plot_on_ax(axs[0, 1], csvs_3d, "dec")
-    axs[0, 1].set_title(r"$\mathbf{3D}$" + "\n\nSpectral Radii", fontsize=15)
+    axs[0, 1].set_title(r"$\mathbf{3D}$" + "\n\n$n_\\mathrm{{{{ev}}}}$-largest EV (mag.)", fontsize=15)
     axs[0, 1].set_ylim(0.0, 1.02)
     
     plot_on_ax(axs[1, 0], csvs_2d, "gmres")
