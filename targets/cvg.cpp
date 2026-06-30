@@ -171,7 +171,7 @@ int main(int argc, char* argv[])
             "eigtol", po::value<double>(), "Tolerance for eigenvalues")(
             "bcond", po::value<std::string>(), "essential, natural")(
             "lumping,l", po::value<std::string>(),
-            "none, rowsum, diagonal, barycentric")(
+            "none, rowsum, diagonal")(
             "cycle,c", po::value<std::string>(), "v, w")(
             "krylov,k", po::value<int>(), "GMRES Krylov dimension")(
             "num-runs,n", po::value<int>(), "No. GMRES runs")(
@@ -354,7 +354,6 @@ int main(int argc, char* argv[])
     static const std::unordered_map<std::string, MassLumping> lumping_map = {
         {"none", MassLumping::None},
         {"rowsum", MassLumping::RowSum},
-        {"barycentric", MassLumping::Barycentric},
         {"scaledid", MassLumping::ScaledId}};
 
     auto it_lump = lumping_map.find(lumping_str);

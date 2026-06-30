@@ -7,12 +7,16 @@ WhitneyFormOperator<DerivedOperator, ACTIVE_FORMS...>::WhitneyFormOperator(
     std::shared_ptr<Mesh> mesh,
     const BCond           bc,
     const OperatorMode    mode,
-    const MassLumping     ml)
+    const MassLumping     ml,
+    const ScalarMassCoefficientArray& scalar_mass_coeffs,
+    const MatrixMassCoefficientArray& matrix_mass_coeffs)
     : mfem::Operator(0),
       mesh_ptr_(std::move(mesh)),
       bc_(bc),
       opmode_(mode),
-      ml_(ml)
+      ml_(ml),
+      scalar_mass_coeffs_(scalar_mass_coeffs),
+      matrix_mass_coeffs_(matrix_mass_coeffs)
 {
     form_to_block_.fill(-1);
 
@@ -25,9 +29,6 @@ WhitneyFormOperator<DerivedOperator, ACTIVE_FORMS...>::WhitneyFormOperator(
 
     // 3. Assemble Hodge Stars (Mass Lumping)
     (assembleGalerkinMass(ACTIVE_FORMS), ...);
-
-    if (ml_ == MassLumping::Barycentric)
-        assembleGeometricLumpedMasses();
 
     // 4. Compute Topological Operators
     (computeDecOperators(ACTIVE_FORMS), ...);
@@ -132,20 +133,39 @@ void WhitneyFormOperator<DerivedOperator, ACTIVE_FORMS...>::
 }
 
 template <class DerivedOperator, unsigned int... ACTIVE_FORMS>
-void WhitneyFormOperator<DerivedOperator, ACTIVE_FORMS...>::
-    assembleGalerkinMass(const unsigned int k)
+void WhitneyFormOperator<DerivedOperator, ACTIVE_FORMS...>::assembleGalerkinMass(
+    const unsigned int k)
 {
     if (k > MAX_DIM || !spaces_[k])
         return;
 
     mass_forms_[k] = std::make_shared<mfem::BilinearForm>(spaces_[k].get());
     mfem::ConstantCoefficient one(1.0);
+    const int dim = mesh_ptr_->Dimension();
 
-    if (k == 0 || k == static_cast<unsigned int>(mesh_ptr_->Dimension()))
-        mass_forms_[k]->AddDomainIntegrator(new mfem::MassIntegrator(one));
+    if (k == 0 || k == static_cast<unsigned int>(dim))
+    {
+        if (scalar_mass_coeffs_[k])
+            mass_forms_[k]->AddDomainIntegrator(new mfem::MassIntegrator(
+                *const_cast<mfem::Coefficient*>(
+                    scalar_mass_coeffs_[k].get())));
+        else
+            mass_forms_[k]->AddDomainIntegrator(new mfem::MassIntegrator(one));
+    }
     else
-        mass_forms_[k]->AddDomainIntegrator(
-            new mfem::VectorFEMassIntegrator(one));
+    {
+        if (matrix_mass_coeffs_[k])
+            mass_forms_[k]->AddDomainIntegrator(
+                new mfem::VectorFEMassIntegrator(
+                    *const_cast<mfem::MatrixCoefficient*>(
+                        matrix_mass_coeffs_[k].get())));
+        else if (scalar_mass_coeffs_[k])
+            mass_forms_[k]->AddDomainIntegrator(new mfem::VectorFEMassIntegrator(
+                *const_cast<mfem::Coefficient*>(scalar_mass_coeffs_[k].get())));
+        else
+            mass_forms_[k]->AddDomainIntegrator(
+                new mfem::VectorFEMassIntegrator(one));
+    }
 
     mass_forms_[k]->Assemble();
     mass_forms_[k]->Finalize();
@@ -199,118 +219,6 @@ void WhitneyFormOperator<DerivedOperator, ACTIVE_FORMS...>::
 
     for (int i = 0; i < essential_dof_[k]->Size(); ++i)
         (*essential_dof_masks_[k])[(*essential_dof_[k])[i]] = 1;
-}
-
-template <class DerivedOperator, unsigned int... ACTIVE_FORMS>
-void WhitneyFormOperator<DerivedOperator, ACTIVE_FORMS...>::
-    assembleGeometricLumpedMasses()
-{
-    DualMesh dual;
-    // Try to convert from MassLumping to DualMesh
-    if (ml_ == MassLumping::Barycentric)
-        dual = DualMesh::Barycentric;
-    else
-        throw std::logic_error("Cannot convert to geometric dual!");
-
-    const int dim = mesh_ptr_->Dimension();
-    if (dim == 2)
-        assembleGeometric2D(dual);
-    else if (dim == 3)
-        assembleGeometric3D(dual);
-    else
-        throw std::runtime_error("Only 2D and 3D meshes supported.");
-}
-
-template <class DerivedOperator, unsigned int... ACTIVE_FORMS>
-void WhitneyFormOperator<DerivedOperator, ACTIVE_FORMS...>::assembleGeometric2D(
-    const DualMesh dual)
-{
-    const int    nEdges = mesh_ptr_->GetNEdges(), nElems = mesh_ptr_->GetNE();
-    mfem::Vector primalLen(nEdges), dualLen(nEdges), primalVol(nElems),
-        dualVol(mesh_ptr_->GetNV());
-    primalLen = 0.0;
-    dualLen   = 0.0;
-    dualVol   = 0.0;
-    primalVol = 0.0;
-    mfem::Array<int> edges, cor, vert;
-
-    for (int i = 0; i < nElems; ++i)
-    {
-        primalVol(i)              = mesh_ptr_->GetElementVolume(i);
-        const mfem::Vector center = mesh_ptr_->center(i, 2, dual);
-        mesh_ptr_->GetElementEdges(i, edges, cor);
-        for (int k = 0; k < edges.Size(); ++k)
-        {
-            const int eid = edges[k];
-            mesh_ptr_->GetEdgeVertices(eid, vert);
-            const mfem::Vector v0  = mesh_ptr_->vertToVec(vert[0]),
-                               v1  = mesh_ptr_->vertToVec(vert[1]),
-                               mid = mesh_ptr_->center(eid, 1, dual);
-            primalLen(eid)         = v0.DistanceTo(v1);
-            dualLen(eid) += center.DistanceTo(mid);
-            dualVol(vert[0]) += triangleArea(v0, center, mid);
-            dualVol(vert[1]) += triangleArea(v1, center, mid);
-        }
-    }
-    lumped_mass_vecs_[0] = std::move(dualVol);
-    lumped_mass_vecs_[1] = std::move(dualLen);
-    lumped_mass_vecs_[1] /= primalLen;
-    lumped_mass_vecs_[2] = std::move(primalVol);
-    lumped_mass_vecs_[2].Reciprocal();
-    lumped_mass_vecs_[2] /= 4.0;
-}
-
-template <class DerivedOperator, unsigned int... ACTIVE_FORMS>
-void WhitneyFormOperator<DerivedOperator, ACTIVE_FORMS...>::assembleGeometric3D(
-    const DualMesh dual)
-{
-    const int nEdges = mesh_ptr_->GetNEdges(), nFaces = mesh_ptr_->GetNFaces(),
-              nElems = mesh_ptr_->GetNE();
-    mfem::Vector pE(nEdges), dF(nEdges), pF(nFaces), dE(nFaces), pV(nElems),
-        dV(mesh_ptr_->GetNV());
-    pE = 0.0;
-    dF = 0.0;
-    pF = 0.0;
-    dE = 0.0;
-    pV = 0.0;
-    dV = 0.0;
-    mfem::Array<int> faces, edges, vert, cor;
-
-    for (int i = 0; i < nElems; ++i)
-    {
-        pV(i)                   = mesh_ptr_->GetElementVolume(i);
-        const mfem::Vector c_el = mesh_ptr_->center(i, 3, dual);
-        mesh_ptr_->GetElementFaces(i, faces, cor);
-        for (int kf = 0; kf < faces.Size(); ++kf)
-        {
-            const int          fid = faces[kf];
-            const mfem::Vector c_f = mesh_ptr_->center(fid, 2, dual);
-            pF(fid)                = mesh_ptr_->GetFaceArea(fid);
-            dE(fid) += c_el.DistanceTo(c_f);
-            mesh_ptr_->GetFaceEdges(fid, edges, cor);
-            for (int ke = 0; ke < edges.Size(); ++ke)
-            {
-                const int eid = edges[ke];
-                mesh_ptr_->GetEdgeVertices(eid, vert);
-                const auto v0          = mesh_ptr_->vertToVec(vert[0]),
-                           v1          = mesh_ptr_->vertToVec(vert[1]);
-                const mfem::Vector c_e = mesh_ptr_->center(eid, 1, dual);
-                pE(eid)                = v0.DistanceTo(v1);
-                dF(eid) += triangleArea(c_e, c_f, c_el);
-                dV(vert[0]) += tetrahedronVolume(v0, c_e, c_f, c_el);
-                dV(vert[1]) += tetrahedronVolume(v1, c_e, c_f, c_el);
-            }
-        }
-    }
-    lumped_mass_vecs_[0] = std::move(dV);
-    lumped_mass_vecs_[1] = std::move(dF);
-    lumped_mass_vecs_[1] /= pE;
-    lumped_mass_vecs_[2] = std::move(dE);
-    lumped_mass_vecs_[2] /= pF;
-    lumped_mass_vecs_[2] /= 4.0;
-    lumped_mass_vecs_[3] = std::move(pV);
-    lumped_mass_vecs_[3].Reciprocal();
-    lumped_mass_vecs_[3] /= 36.0;
 }
 
 template <class DerivedOperator, unsigned int... ACTIVE_FORMS>
@@ -548,7 +456,8 @@ WhitneyFormOperator<DerivedOperator, ACTIVE_FORMS...>::createRefined() const
     new_mesh->refine();
 
     return std::make_shared<DerivedOperator>(
-        new_mesh, this->bc_, this->opmode_, this->ml_);
+        new_mesh, this->bc_, this->opmode_, this->ml_, scalar_mass_coeffs_,
+        matrix_mass_coeffs_);
 }
 
 template <class DerivedOperator, unsigned int... ACTIVE_FORMS>

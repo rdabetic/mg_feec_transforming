@@ -45,9 +45,7 @@ def get_title_from_path(path):
         cycle_str = "W-Cycle"
     
     lump_str = "Unknown Lumping"
-    if any("barycentric" in p or "bary" in p for p in parts): 
-        lump_str = "Barycentric"
-    elif any("diagonal" in p or "rowsum" in p or "row_sum" in p for p in parts): 
+    if any("diagonal" in p or "rowsum" in p or "row_sum" in p for p in parts): 
         lump_str = "Row Sum"
     elif any("scaledid" in p or "scaled" in p for p in parts): 
         lump_str = "Scaled Id"

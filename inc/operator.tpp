@@ -18,7 +18,6 @@ enum class MassLumping
                ///< matrix.
     ScaledId,  ///< Take h^{n - 2k} Id as the ``approximation'' of the mass
                ///< matrix for k-forms in n dimensions
-    Barycentric  ///< Barycentric (geometric) mass lumping.
 };
 
 enum class BCond
@@ -32,6 +31,11 @@ enum class OperatorMode
     Galerkin,  ///< Standard Finite Element Method (FEM).
     DEC        ///< Discrete Exterior Calculus (DEC).
 };
+
+using ScalarMassCoefficientArray =
+    std::array<std::shared_ptr<const mfem::Coefficient>, 4>;
+using MatrixMassCoefficientArray =
+    std::array<std::shared_ptr<const mfem::MatrixCoefficient>, 4>;
 
 // =====================================================================
 //                         CLASS DECLARATION
@@ -61,6 +65,9 @@ protected:
 
     mfem::Array<int>             block_offsets_;
     std::array<int, MAX_DIM + 1> form_to_block_;
+
+    ScalarMassCoefficientArray scalar_mass_coeffs_{};
+    MatrixMassCoefficientArray matrix_mass_coeffs_{};
 
     std::array<std::shared_ptr<mfem::FiniteElementCollection>, MAX_DIM + 1>
                                                                        fecs_;
@@ -95,7 +102,9 @@ public:
         std::shared_ptr<Mesh> mesh,
         const BCond           bc     = BCond::Natural,
         const OperatorMode    mode   = OperatorMode::Galerkin,
-        const MassLumping     ml     = MassLumping::RowSum);
+        const MassLumping     ml     = MassLumping::RowSum,
+        const ScalarMassCoefficientArray& scalar_mass_coeffs = {},
+        const MatrixMassCoefficientArray& matrix_mass_coeffs = {});
 
     virtual ~WhitneyFormOperator() = default;
 
@@ -294,9 +303,6 @@ protected:
     void assembleExteriorDerivative(const unsigned int k);
     void assembleGalerkinMass(const unsigned int k);
     void buildEssentialDofMask(const int k);
-    void assembleGeometricLumpedMasses();
-    void assembleGeometric2D(const DualMesh dual);
-    void assembleGeometric3D(const DualMesh dual);
     void computeDecOperators(const unsigned int k);
     void eliminateBoundaryConditionsD(const unsigned int k);
     void eliminateBoundaryConditionsDelta(const unsigned int k);

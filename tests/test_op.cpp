@@ -43,7 +43,7 @@ TEST(OperatorTopologyTest, BlockSizes2D_Triangular)
     mfem::Mesh m =
         mfem::Mesh::MakeCartesian2D(2, 2, mfem::Element::TRIANGLE, true);
     auto             mesh = std::make_shared<Mesh>(std::move(m));
-    DummyOp<0, 1, 2> op(mesh, BCond::Essential, OperatorMode::DEC, MassLumping::Barycentric);
+    DummyOp<0, 1, 2> op(mesh, BCond::Essential, OperatorMode::DEC, MassLumping::RowSum);
 
     EXPECT_EQ(op.getBlockSize(0), 9);
     EXPECT_EQ(op.getBlockSize(1), 16);
@@ -60,7 +60,7 @@ TEST(OperatorTopologyTest, BlockSizes3D_Tetrahedral)
     mfem::Mesh m =
         mfem::Mesh::MakeCartesian3D(2, 2, 2, mfem::Element::TETRAHEDRON, true);
     auto                mesh = std::make_shared<Mesh>(std::move(m));
-    DummyOp<0, 1, 2, 3> op(mesh, BCond::Natural, OperatorMode::DEC, MassLumping::Barycentric);
+    DummyOp<0, 1, 2, 3> op(mesh, BCond::Natural, OperatorMode::DEC, MassLumping::RowSum);
 
     // Verify blocks exist and have expected dimensions for a tet mesh
     EXPECT_GT(op.getBlockSize(0), 0);  // Vertices

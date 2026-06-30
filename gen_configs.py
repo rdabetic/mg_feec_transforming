@@ -95,7 +95,7 @@ PROBLEM_NEV_FUNCTIONS = {
 # ------------------------------------------------------------------------------
 
 # Mass matrix lumping schemes and multigrid structure patterns
-LUMPING_MODES = ["rowsum", "barycentric", "scaledid"]
+LUMPING_MODES = ["rowsum", "scaledid"]
 CYCLE_MODES   = ["v", "w"]
 
 # Problem definitions: (problem_identifier, output_subdir, strict_dim_matching, allowed_dimensions)

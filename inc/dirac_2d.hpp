@@ -26,8 +26,11 @@ public:
         std::shared_ptr<Mesh> mesh,
         const BCond           BD   = BCond::Natural,
         const OperatorMode    mode = OperatorMode::DEC,
-        const MassLumping     ml   = MassLumping::RowSum)
-        : WhitneyFormOperator<DiracOperator2D, 0, 1, 2>(mesh, BD, mode, ml)
+        const MassLumping     ml   = MassLumping::RowSum,
+        const ScalarMassCoefficientArray& scalar_mass_coeffs = {},
+        const MatrixMassCoefficientArray& matrix_mass_coeffs = {})
+        : WhitneyFormOperator<DiracOperator2D, 0, 1, 2>(
+              mesh, BD, mode, ml, scalar_mass_coeffs, matrix_mass_coeffs)
     {
     }
 

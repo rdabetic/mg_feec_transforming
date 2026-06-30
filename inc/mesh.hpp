@@ -8,12 +8,6 @@
 #include "incidence.hpp"
 #include "mfem.hpp"
 
-enum class DualMesh
-{
-    Circumcentric,
-    Barycentric
-};
-
 class Mesh : public mfem::Mesh
 {
 public:
@@ -32,8 +26,6 @@ public:
 
     void refine();
 
-    [[nodiscard]] mfem::Vector
-    center(const int elemID, const int k, const DualMesh dual) const;
     [[nodiscard]] mfem::Vector barycenter(const int id, const int k) const;
     [[nodiscard]] mfem::real_t meshWidth() const { return h_; }
     [[nodiscard]] mfem::Vector vertToVec(const int vid) const;

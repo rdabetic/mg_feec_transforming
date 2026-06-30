@@ -65,15 +65,6 @@ mfem::Vector Mesh::barycenter(const int id, const int k) const
     return c;
 }
 
-mfem::Vector Mesh::center(const int elemID, const int k, const DualMesh dual)
-    const
-{
-    if (dual == DualMesh::Barycentric || k <= 1)
-        return barycenter(elemID, k);
-
-    throw std::runtime_error("Center not implemented for this dual type");
-}
-
 mfem::Vector Mesh::vertToVec(const int vid) const
 {
     return mfem::Vector(const_cast<mfem::real_t*>(GetVertex(vid)), Dimension());
