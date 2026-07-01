@@ -35,20 +35,22 @@ struct BenchResult
 struct CliOptions
 {
     std::string mesh_file = "../../tests/cube.msh";
-    std::string output_file = "hcurl_jump_cvg.csv";
+    std::string output_file = "hcurl_jump_residual_decay.txt";
     std::string bcond = "essential";
     std::string cycle = "v";
     std::string lumping = "rowsum";
-    int         max_ref = 3;
+    int         fixed_ref = 1;
     int         num_runs = 8;
     int         krylov_dim = 32;
     int         gmres_maxit = 256;
     int         mg_iters = 16;
     int         pre_smooth = 1;
     int         post_smooth = 1;
-    int         verbose = 1;
+    int         verbose = 0;
     double      gmres_tol = 1e-6;
-    double      jump_value = 1e3;
+    double      jump_min = 1e1;
+    double      jump_max = 1e4;
+    int         jump_steps = 5;
     double      inner_cube_size = 0.35;
 };
 
@@ -69,6 +71,47 @@ void save_to_csv(const std::string& filename, const BenchResult& res)
          << std::setprecision(6) << res.mg_asymptotic_rate << "\n";
 }
 
+struct JumpResult
+{
+    double      jump_value;
+    std::string spectral_radii;
+    mfem::real_t avg_gmres_iters;
+    mfem::real_t mg_asymptotic_rate;
+};
+
+void print_and_save_table(const std::string& csv_filename,
+                          const std::vector<JumpResult>& results)
+{
+    // Print to stdout
+    std::cout << std::left << std::setw(14) << "Jump Value" << std::right
+              << std::setw(16) << "Spectral Radii" << std::right
+              << std::setw(16) << "Avg GMRES Iters" << std::right
+              << std::setw(14) << "MG Rate" << "\n";
+    std::cout << std::string(60, '-') << "\n";
+
+    for (const auto& res : results)
+    {
+        std::cout << std::left << std::setw(14) << std::scientific
+                  << std::setprecision(2) << res.jump_value << std::right
+                  << std::setw(16) << res.spectral_radii << std::right
+                  << std::fixed << std::setprecision(2) << std::setw(16)
+                  << res.avg_gmres_iters << std::right << std::setw(14)
+                  << res.mg_asymptotic_rate << "\n";
+    }
+
+    // Save to CSV
+    std::ofstream file(csv_filename);
+    file << "Jump,SpectralRadii,AvgGMRESIters,MGAsymptoticRate\n";
+    for (const auto& res : results)
+    {
+        file << std::scientific << std::setprecision(6) << res.jump_value
+             << ",\"" << res.spectral_radii << "\","
+             << std::fixed << std::setprecision(2) << res.avg_gmres_iters
+             << "," << std::scientific << std::setprecision(6)
+             << res.mg_asymptotic_rate << "\n";
+    }
+}
+
 CliOptions parse_options(int argc, char* argv[])
 {
     CliOptions opts;
@@ -78,15 +121,15 @@ CliOptions parse_options(int argc, char* argv[])
         "mesh,m", po::value<std::string>(&opts.mesh_file)->default_value(opts.mesh_file),
         "Mesh file (default: unit cube mesh)")(
         "output,o", po::value<std::string>(&opts.output_file)->default_value(opts.output_file),
-        "CSV output file")(
+        "Output file for residual decay")(
         "bcond", po::value<std::string>(&opts.bcond)->default_value(opts.bcond),
         "essential, natural")(
         "cycle,c", po::value<std::string>(&opts.cycle)->default_value(opts.cycle),
         "v, w")(
         "lumping,l", po::value<std::string>(&opts.lumping)->default_value(opts.lumping),
         "rowsum, scaledid")(
-        "max-ref,r", po::value<int>(&opts.max_ref)->default_value(opts.max_ref),
-        "Max refinements")(
+        "ref,r", po::value<int>(&opts.fixed_ref)->default_value(opts.fixed_ref),
+        "Fixed refinement level to test")(
         "num-runs,n", po::value<int>(&opts.num_runs)->default_value(opts.num_runs),
         "GMRES runs per level")(
         "krylov,k", po::value<int>(&opts.krylov_dim)->default_value(opts.krylov_dim),
@@ -101,12 +144,16 @@ CliOptions parse_options(int argc, char* argv[])
         "Pre-smoothing iterations")(
         "post-smooth", po::value<int>(&opts.post_smooth)->default_value(opts.post_smooth),
         "Post-smoothing iterations")(
-        "jump", po::value<double>(&opts.jump_value)->default_value(opts.jump_value),
-        "Coefficient jump value inside the inner cube")(
+        "jump-min", po::value<double>(&opts.jump_min)->default_value(opts.jump_min),
+        "Minimum jump coefficient value")(
+        "jump-max", po::value<double>(&opts.jump_max)->default_value(opts.jump_max),
+        "Maximum jump coefficient value")(
+        "jump-steps", po::value<int>(&opts.jump_steps)->default_value(opts.jump_steps),
+        "Number of jump values to test (logarithmic spacing)")(
         "inner-size", po::value<double>(&opts.inner_cube_size)->default_value(opts.inner_cube_size),
         "Side length of the inner cube jump region")(
         "verbose,V", po::value<int>(&opts.verbose)->default_value(opts.verbose),
-        "Verbose residual decay output");
+        "Verbose output");
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -123,18 +170,19 @@ CliOptions parse_options(int argc, char* argv[])
 
 template <typename MGType>
 BenchResult run_level(
-    MGType&                MG,
-    const int              level,
-    const int              num_runs,
-    const mfem::real_t     gmres_tol,
-    const int              krylov_dim,
-    const int              gmres_maxit,
-    const int              mg_iters,
-    const int              verbose,
-    const BCond            bc,
-    const OperatorMode     mode,
-    const int              num_eigs = 1,
-    const mfem::real_t     eig_tol = 1e-2)
+    MGType&                     MG,
+    const int                   level,
+    const int                   num_runs,
+    const mfem::real_t          gmres_tol,
+    const int                   krylov_dim,
+    const int                   gmres_maxit,
+    const int                   mg_iters,
+    const int                   verbose,
+    const BCond                 bc,
+    const OperatorMode          mode,
+    const int                   num_eigs = 1,
+    const mfem::real_t          eig_tol = 1e-2,
+    std::ofstream*              residual_out = nullptr)
 {
     auto op = MG.getFinestOperator();
 
@@ -207,6 +255,16 @@ BenchResult run_level(
         norms.reserve(mg_iters);
         mfem::real_t prev_norm = -1.0;
 
+        // Write header to file if provided
+        if (residual_out)
+        {
+            *residual_out << "Jump Value: " << level << "\n";
+            *residual_out << std::left << std::setw(8) << "Iter"
+                          << std::setw(24) << "Rel. Residual"
+                          << "Reduction Factor\n";
+            *residual_out << std::string(55, '-') << "\n";
+        }
+
         if (verbose)
         {
             std::cout << "------------------------------------------------------\n";
@@ -229,6 +287,22 @@ BenchResult run_level(
             norms.push_back(nrm);
             const mfem::real_t red = (prev_norm > 0.0) ? nrm / prev_norm : 0.0;
 
+            if (residual_out)
+            {
+                *residual_out << " " << std::left << std::setw(8) << it
+                              << std::scientific << std::setprecision(6)
+                              << std::setw(24) << nrm;
+                if (prev_norm > 0.0)
+                {
+                    *residual_out << std::fixed << std::setprecision(4) << red;
+                }
+                else
+                {
+                    *residual_out << "-----";
+                }
+                *residual_out << "\n";
+            }
+
             if (verbose)
             {
                 std::cout << " " << std::left << std::setw(8) << it
@@ -247,6 +321,9 @@ BenchResult run_level(
 
             prev_norm = nrm;
         }
+
+        if (residual_out)
+            *residual_out << std::string(55, '-') << "\n\n";
 
         if (verbose)
             std::cout << "---------------------------------------------"
@@ -327,15 +404,32 @@ int main(int argc, char* argv[])
               << (cycle_type == CycleType::VCYCLE ? "V-Cycle" : "W-Cycle")
               << "\n";
     std::cout << " Lumping:         " << opts.lumping << "\n";
-    std::cout << " Jump Value:      " << opts.jump_value << "\n";
+    std::cout << " Fixed Refinement: " << opts.fixed_ref << "\n";
+    std::cout << " Jump Range:      [" << opts.jump_min << ", " << opts.jump_max
+              << "] (" << opts.jump_steps << " steps)\n";
     std::cout << " Inner Cube Size: " << opts.inner_cube_size << "\n";
-    std::cout << " Max Refinement:  " << opts.max_ref << "\n";
     std::cout << " GMRES Runs:      " << opts.num_runs << "\n";
     std::cout << "=================================================\n\n";
 
+    // Generate logarithmically spaced jump values
+    std::vector<double> jump_values;
     {
-        std::ofstream ofs(opts.output_file, std::ios::out | std::ios::trunc);
+        const double log_min = std::log(opts.jump_min);
+        const double log_max = std::log(opts.jump_max);
+        const double step = (opts.jump_steps > 1)
+                                ? (log_max - log_min) / (opts.jump_steps - 1)
+                                : 0.0;
+        for (int i = 0; i < opts.jump_steps; ++i)
+        {
+            jump_values.push_back(std::exp(log_min + i * step));
+        }
     }
+
+    // Open residual decay output file
+    std::ofstream residual_file(opts.output_file);
+
+    // Results container
+    std::vector<JumpResult> results;
 
     mfem::Mesh mfem_mesh(opts.mesh_file.c_str());
     auto       mesh = std::make_shared<Mesh>(std::move(mfem_mesh));
@@ -343,71 +437,80 @@ int main(int argc, char* argv[])
     const mfem::real_t lo = 0.5 - 0.5 * opts.inner_cube_size;
     const mfem::real_t hi = 0.5 + 0.5 * opts.inner_cube_size;
 
-    auto scalar_jump = std::make_shared<mfem::FunctionCoefficient>(
-        [lo, hi, jump = opts.jump_value](const mfem::Vector& x) {
-            return (x[0] >= lo && x[0] <= hi && x[1] >= lo && x[1] <= hi &&
-                    x[2] >= lo && x[2] <= hi)
-                       ? jump
-                       : 1.0;
-        });
-
-    auto matrix_jump = std::make_shared<mfem::MatrixFunctionCoefficient>(
-        3, [lo, hi, jump = opts.jump_value](const mfem::Vector& x,
-                                              mfem::DenseMatrix& K) {
-            const mfem::real_t value =
-                (x[0] >= lo && x[0] <= hi && x[1] >= lo && x[1] <= hi &&
-                 x[2] >= lo && x[2] <= hi)
-                    ? jump
-                    : 1.0;
-            K.SetSize(3);
-            K = 0.0;
-            K(0, 0) = K(1, 1) = K(2, 2) = value;
-        });
-
-    ScalarMassCoefficientArray scalar_coeffs{};
-    MatrixMassCoefficientArray matrix_coeffs{};
-    scalar_coeffs[0] = scalar_jump;
-    scalar_coeffs[2] = scalar_jump;
-    matrix_coeffs[1] = matrix_jump;
-
-    Multigrid<HCurlLaplacianOperator, HCurlLaplacianSmoother, 0, 1> MG(
-        OperatorMode::Galerkin);
-    MG.setCycleType(cycle_type);
-    MG.setSmoothingIterations(opts.pre_smooth, opts.post_smooth);
-    MG.setIterativeMode(false);
-    MG.addCoarseLevel(
-        nullptr, mesh, bc, OperatorMode::Galerkin, lumping, scalar_coeffs,
-        matrix_coeffs);
-
-    std::cout << std::setw(6) << "Lvl" << std::right << std::setw(15)
-              << "Unknowns" << std::right << std::setw(12) << "h"
-              << std::right << std::setw(16) << "Spectral Radii"
-              << std::right << std::setw(16) << "Avg GMRES Iters"
-              << std::right << std::setw(14) << "MG Rate" << "\n";
-    std::cout << std::string(80, '-') << "\n";
-
-    for (int lvl = 0; lvl <= opts.max_ref; ++lvl)
+    // Iterate over jump values
+    for (double jump_value : jump_values)
     {
-        auto op = MG.getFinestOperator();
-        const BenchResult res = run_level(
-            MG, lvl, opts.num_runs, opts.gmres_tol, opts.krylov_dim,
-            opts.gmres_maxit, opts.mg_iters, opts.verbose, bc,
+        auto scalar_jump = std::make_shared<mfem::FunctionCoefficient>(
+            [lo, hi, jump = jump_value](const mfem::Vector& x) {
+                return (x[0] >= lo && x[0] <= hi && x[1] >= lo && x[1] <= hi &&
+                        x[2] >= lo && x[2] <= hi)
+                           ? jump
+                           : 1.0;
+            });
+
+        auto matrix_jump = std::make_shared<mfem::MatrixFunctionCoefficient>(
+            3, [lo, hi, jump = jump_value](const mfem::Vector& x,
+                                              mfem::DenseMatrix& K) {
+                const mfem::real_t value =
+                    (x[0] >= lo && x[0] <= hi && x[1] >= lo && x[1] <= hi &&
+                     x[2] >= lo && x[2] <= hi)
+                        ? jump
+                        : 1.0;
+                K.SetSize(3);
+                K = 0.0;
+                K(0, 0) = K(1, 1) = K(2, 2) = value;
+            });
+
+        ScalarMassCoefficientArray scalar_coeffs{};
+        MatrixMassCoefficientArray matrix_coeffs{};
+        scalar_coeffs[0] = scalar_jump;
+        scalar_coeffs[2] = scalar_jump;
+        matrix_coeffs[1] = matrix_jump;
+
+        Multigrid<HCurlLaplacianOperator, HCurlLaplacianSmoother, 0, 1> MG(
             OperatorMode::Galerkin);
+        MG.setCycleType(cycle_type);
+        MG.setSmoothingIterations(opts.pre_smooth, opts.post_smooth);
+        MG.setIterativeMode(false);
+        MG.addCoarseLevel(nullptr, mesh, bc, OperatorMode::Galerkin, lumping,
+                          scalar_coeffs, matrix_coeffs);
 
-        save_to_csv(opts.output_file, res);
-
-        std::cout << std::left << std::setw(6) << res.refinements << std::right
-                  << std::setw(15) << res.dofs << std::right << std::scientific
-                  << std::setprecision(4) << std::setw(12) << res.mesh_width
-                  << std::right << std::setw(16) << res.spectral_radii
-                  << std::right << std::fixed << std::setprecision(2)
-                  << std::setw(16) << res.avg_gmres_iters << std::right
-                  << std::setw(14) << res.mg_asymptotic_rate << "\n";
-
-        if (lvl < opts.max_ref)
+        // Refine to the fixed refinement level
+        for (int r = 0; r < opts.fixed_ref; ++r)
             MG.addRefinedLevel();
+
+        // Run analysis at this jump value
+        const BenchResult bench_res =
+            run_level(MG, static_cast<int>(jump_value), opts.num_runs,
+                      opts.gmres_tol, opts.krylov_dim, opts.gmres_maxit,
+                      opts.mg_iters, opts.verbose, bc, OperatorMode::Galerkin,
+                      1, 1e-2, &residual_file);
+
+        results.push_back(
+            {jump_value, bench_res.spectral_radii, bench_res.avg_gmres_iters,
+             bench_res.mg_asymptotic_rate});
     }
 
-    std::cout << std::string(80, '=') << "\n";
+    residual_file.close();
+
+    // Print and save results table
+    std::string csv_output = opts.output_file;
+    // Replace .txt with .csv if applicable
+    const size_t dot_pos = csv_output.rfind('.');
+    if (dot_pos != std::string::npos)
+        csv_output = csv_output.substr(0, dot_pos) + "_results.csv";
+    else
+        csv_output += "_results.csv";
+
+    std::cout << "\n=================================================\n";
+    std::cout << "  Jump Coefficient Study Results\n";
+    std::cout << "=================================================\n\n";
+    print_and_save_table(csv_output, results);
+
+    std::cout << "\n=================================================\n";
+    std::cout << "Residual decay data saved to: " << opts.output_file << "\n";
+    std::cout << "Results table saved to:      " << csv_output << "\n";
+    std::cout << "=================================================\n";
+
     return 0;
 }
