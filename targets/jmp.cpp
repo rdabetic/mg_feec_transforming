@@ -12,34 +12,25 @@
 #include <vector>
 
 #include "SpectraErrorOp.hpp"
-#include "hcurl_laplacian.hpp"
+#include "magnetostatics.hpp"
 #include "mesh.hpp"
 #include "mfem.hpp"
 #include "mg.tpp"
+#include "operator.tpp"
 
 namespace po = boost::program_options;
-using namespace HCurlLaplacian;
+using namespace Magnetostatics;
 
 namespace
 {
-struct BenchResult
-{
-    int          refinements;
-    mfem::real_t mesh_width;
-    int          dofs;
-    std::string  spectral_radii;
-    mfem::real_t avg_gmres_iters;
-    mfem::real_t mg_asymptotic_rate;
-};
-
 struct CliOptions
 {
     std::string mesh_file = "../../tests/cube.msh";
-    std::string output_file = "hcurl_jump_residual_decay.txt";
+    std::string output_file = "mag_jump_residual_decay.txt";
     std::string bcond = "essential";
-    std::string cycle = "v";
+    std::string cycle = "w";
     std::string lumping = "rowsum";
-    int         fixed_ref = 1;
+    int         max_ref = 3;
     int         num_runs = 8;
     int         krylov_dim = 32;
     int         gmres_maxit = 256;
@@ -48,32 +39,16 @@ struct CliOptions
     int         post_smooth = 1;
     int         verbose = 0;
     double      gmres_tol = 1e-6;
-    double      jump_min = 1e1;
+    double      jump_min = 1;
     double      jump_max = 1e4;
     int         jump_steps = 5;
-    double      inner_cube_size = 0.35;
+    double      inner_cube_size = 0.5;
 };
-
-void save_to_csv(const std::string& filename, const BenchResult& res)
-{
-    std::ifstream check(filename);
-    const bool exists = check.peek() != std::ifstream::traits_type::eof();
-    check.close();
-
-    std::ofstream file(filename, std::ios::app);
-    if (!exists)
-        file << "Refinements,mesh-width,DOFs,SpectralRadii,AvgGMRESIters,MGAsymptoticRate\n";
-
-    file << res.refinements << "," << std::scientific << std::setprecision(6)
-         << res.mesh_width << "," << res.dofs << ",\"" << res.spectral_radii
-         << "\"," << std::fixed << std::setprecision(2)
-         << res.avg_gmres_iters << "," << std::scientific
-         << std::setprecision(6) << res.mg_asymptotic_rate << "\n";
-}
 
 struct JumpResult
 {
     double      jump_value;
+    int         ref_level;
     std::string spectral_radii;
     mfem::real_t avg_gmres_iters;
     mfem::real_t mg_asymptotic_rate;
@@ -84,15 +59,17 @@ void print_and_save_table(const std::string& csv_filename,
 {
     // Print to stdout
     std::cout << std::left << std::setw(14) << "Jump Value" << std::right
+              << std::setw(12) << "Ref Level" << std::right
               << std::setw(16) << "Spectral Radii" << std::right
               << std::setw(16) << "Avg GMRES Iters" << std::right
               << std::setw(14) << "MG Rate" << "\n";
-    std::cout << std::string(60, '-') << "\n";
+    std::cout << std::string(72, '-') << "\n";
 
     for (const auto& res : results)
     {
         std::cout << std::left << std::setw(14) << std::scientific
                   << std::setprecision(2) << res.jump_value << std::right
+                  << std::setw(12) << res.ref_level << std::right
                   << std::setw(16) << res.spectral_radii << std::right
                   << std::fixed << std::setprecision(2) << std::setw(16)
                   << res.avg_gmres_iters << std::right << std::setw(14)
@@ -101,10 +78,11 @@ void print_and_save_table(const std::string& csv_filename,
 
     // Save to CSV
     std::ofstream file(csv_filename);
-    file << "Jump,SpectralRadii,AvgGMRESIters,MGAsymptoticRate\n";
+    file << "Jump,RefLevel,SpectralRadii,AvgGMRESIters,MGAsymptoticRate\n";
     for (const auto& res : results)
     {
         file << std::scientific << std::setprecision(6) << res.jump_value
+             << "," << res.ref_level
              << ",\"" << res.spectral_radii << "\","
              << std::fixed << std::setprecision(2) << res.avg_gmres_iters
              << "," << std::scientific << std::setprecision(6)
@@ -128,8 +106,8 @@ CliOptions parse_options(int argc, char* argv[])
         "v, w")(
         "lumping,l", po::value<std::string>(&opts.lumping)->default_value(opts.lumping),
         "rowsum, scaledid")(
-        "ref,r", po::value<int>(&opts.fixed_ref)->default_value(opts.fixed_ref),
-        "Fixed refinement level to test")(
+        "max-ref,r", po::value<int>(&opts.max_ref)->default_value(opts.max_ref),
+        "Maximum refinement level to test")(
         "num-runs,n", po::value<int>(&opts.num_runs)->default_value(opts.num_runs),
         "GMRES runs per level")(
         "krylov,k", po::value<int>(&opts.krylov_dim)->default_value(opts.krylov_dim),
@@ -169,9 +147,10 @@ CliOptions parse_options(int argc, char* argv[])
 }
 
 template <typename MGType>
-BenchResult run_level(
+JumpResult run_level(
     MGType&                     MG,
-    const int                   level,
+    const double                jump_value,
+    const int                   ref_level,
     const int                   num_runs,
     const mfem::real_t          gmres_tol,
     const int                   krylov_dim,
@@ -182,7 +161,7 @@ BenchResult run_level(
     const OperatorMode          mode,
     const int                   num_eigs = 1,
     const mfem::real_t          eig_tol = 1e-2,
-    std::ofstream*              residual_out = nullptr)
+    std::ofstream* residual_out = nullptr)
 {
     auto op = MG.getFinestOperator();
 
@@ -190,7 +169,7 @@ BenchResult run_level(
     std::stringstream ss_csv;
     MG.setMode(OperatorMode::DEC);
     op->setMode(OperatorMode::DEC);
-    auto start_v = op->getRandomVector(42 + level);
+    auto start_v = op->getRandomVector(42 + ref_level);
     auto post = [&](mfem::Vector& x) {
         mfem::BlockVector bx(x.GetData(), op->getBlockOffsets());
         op->eliminateTrivialSolutionHarmonics(bx);
@@ -210,7 +189,7 @@ BenchResult run_level(
     int total_iters = 0;
     for (int r = 0; r < num_runs; ++r)
     {
-        mfem::BlockVector x_true = op->getRandomVector(12345 + 17 * level + r);
+        mfem::BlockVector x_true = op->getRandomVector(12345 + 17 * ref_level + r);
         op->eliminateTrivialSolutionHarmonics(x_true);
         if (bc == BCond::Essential)
             op->eliminateBC(x_true);
@@ -243,13 +222,16 @@ BenchResult run_level(
     if (mg_iters > 0)
     {
         mfem::BlockVector rhs(op->getBlockOffsets());
-        mfem::BlockVector x = op->getRandomVector(54321 + level);
-        mfem::BlockVector rhs_rand = op->getRandomVector(12345 + level);
+        mfem::BlockVector x = op->getRandomVector(54321 + ref_level);
+        mfem::BlockVector rhs_rand = op->getRandomVector(12345 + ref_level);
         op->eliminateTrivialSolutionHarmonics(rhs_rand);
         op->applyDecOp(rhs_rand, rhs);
 
         mfem::BlockVector res = op->createBlockVector();
-        const mfem::real_t rhs_norm = std::max<mfem::real_t>(rhs.Norml2(), 1e-16);
+
+        op->Mult(x, res);
+        res -= rhs;
+        const mfem::real_t initial_norm = std::max<mfem::real_t>(rhs.Norml2(), 1e-16);
 
         std::vector<mfem::real_t> norms;
         norms.reserve(mg_iters);
@@ -258,7 +240,8 @@ BenchResult run_level(
         // Write header to file if provided
         if (residual_out)
         {
-            *residual_out << "Jump Value: " << level << "\n";
+            *residual_out << "Jump Value: " << jump_value 
+                          << " | Ref Level: " << ref_level << "\n";
             *residual_out << std::left << std::setw(8) << "Iter"
                           << std::setw(24) << "Rel. Residual"
                           << "Reduction Factor\n";
@@ -283,7 +266,7 @@ BenchResult run_level(
             op->Mult(x, res);
             res -= rhs;
 
-            const mfem::real_t nrm = res.Norml2() / rhs_norm;
+            const mfem::real_t nrm = res.Norml2() / initial_norm;
             norms.push_back(nrm);
             const mfem::real_t red = (prev_norm > 0.0) ? nrm / prev_norm : 0.0;
 
@@ -360,8 +343,7 @@ BenchResult run_level(
     }
 
     return {
-        level, op->getMesh()->meshWidth(), op->Height(), ss_csv.str(),
-        avg_iters, mg_rate
+        jump_value, ref_level, ss_csv.str(), avg_iters, mg_rate
     };
 }
 
@@ -395,7 +377,7 @@ int main(int argc, char* argv[])
 
     std::cout << std::scientific;
     std::cout << "=================================================\n";
-    std::cout << "  H(curl) Jump-Coefficient Multigrid Benchmark\n";
+    std::cout << "  Magnetostatics 2-Form Jump Multigrid Benchmark\n";
     std::cout << "=================================================\n";
     std::cout << " Mesh File:       " << opts.mesh_file << "\n";
     std::cout << " Output File:     " << opts.output_file << "\n";
@@ -404,7 +386,7 @@ int main(int argc, char* argv[])
               << (cycle_type == CycleType::VCYCLE ? "V-Cycle" : "W-Cycle")
               << "\n";
     std::cout << " Lumping:         " << opts.lumping << "\n";
-    std::cout << " Fixed Refinement: " << opts.fixed_ref << "\n";
+    std::cout << " Max Refinement:  " << opts.max_ref << "\n";
     std::cout << " Jump Range:      [" << opts.jump_min << ", " << opts.jump_max
               << "] (" << opts.jump_steps << " steps)\n";
     std::cout << " Inner Cube Size: " << opts.inner_cube_size << "\n";
@@ -440,55 +422,49 @@ int main(int argc, char* argv[])
     // Iterate over jump values
     for (double jump_value : jump_values)
     {
-        auto scalar_jump = std::make_shared<mfem::FunctionCoefficient>(
-            [lo, hi, jump = jump_value](const mfem::Vector& x) {
-                return (x[0] >= lo && x[0] <= hi && x[1] >= lo && x[1] <= hi &&
-                        x[2] >= lo && x[2] <= hi)
-                           ? jump
-                           : 1.0;
-            });
-
+        // Create the jumping matrix coefficient for the 2-form inner product
         auto matrix_jump = std::make_shared<mfem::MatrixFunctionCoefficient>(
-            3, [lo, hi, jump = jump_value](const mfem::Vector& x,
-                                              mfem::DenseMatrix& K) {
-                const mfem::real_t value =
-                    (x[0] >= lo && x[0] <= hi && x[1] >= lo && x[1] <= hi &&
-                     x[2] >= lo && x[2] <= hi)
-                        ? jump
-                        : 1.0;
+            3, [lo, hi, jump = jump_value](const mfem::Vector& x, mfem::DenseMatrix& K) {
+                const mfem::real_t value = 
+                    (x[0] >= lo && x[0] <= hi && 
+                     x[1] >= lo && x[1] <= hi && 
+                     x[2] >= lo && x[2] <= hi) ? jump : 1.0;
                 K.SetSize(3);
                 K = 0.0;
-                K(0, 0) = K(1, 1) = K(2, 2) = value;
+                K(0,0) = K(1,1) = K(2,2) = value;
             });
 
-        ScalarMassCoefficientArray scalar_coeffs{};
-        MatrixMassCoefficientArray matrix_coeffs{};
-        scalar_coeffs[0] = scalar_jump;
-        scalar_coeffs[2] = scalar_jump;
-        matrix_coeffs[1] = matrix_jump;
+        // Create matrix coefficient array with jump in 2-form (index 2)
+        MatrixMassCoefficientArray matrix_coeffs = {};
+        matrix_coeffs[2] = matrix_jump;
 
-        Multigrid<HCurlLaplacianOperator, HCurlLaplacianSmoother, 0, 1> MG(
+        Multigrid<MagOperator, MagSmoother, 0, 1> MG(
             OperatorMode::Galerkin);
         MG.setCycleType(cycle_type);
         MG.setSmoothingIterations(opts.pre_smooth, opts.post_smooth);
         MG.setIterativeMode(false);
-        MG.addCoarseLevel(nullptr, mesh, bc, OperatorMode::Galerkin, lumping,
-                          scalar_coeffs, matrix_coeffs);
+        
+        // Pass the matrix coefficient array to apply jump in 2-form inner product
+        MG.addCoarseLevel(nullptr, mesh, bc, OperatorMode::Galerkin, lumping, 
+                          ScalarMassCoefficientArray{}, matrix_coeffs);
 
-        // Refine to the fixed refinement level
-        for (int r = 0; r < opts.fixed_ref; ++r)
-            MG.addRefinedLevel();
+        // Test across refinement levels for this jump value
+        for (int r = 0; r <= opts.max_ref; ++r)
+        {
+            if (r > 0)
+            {
+                MG.addRefinedLevel();
+            }
 
-        // Run analysis at this jump value
-        const BenchResult bench_res =
-            run_level(MG, static_cast<int>(jump_value), opts.num_runs,
-                      opts.gmres_tol, opts.krylov_dim, opts.gmres_maxit,
-                      opts.mg_iters, opts.verbose, bc, OperatorMode::Galerkin,
-                      1, 1e-2, &residual_file);
+            // Run analysis at this jump value and refinement level
+            const JumpResult bench_res =
+                run_level(MG, jump_value, r, opts.num_runs,
+                          opts.gmres_tol, opts.krylov_dim, opts.gmres_maxit,
+                          opts.mg_iters, opts.verbose, bc, OperatorMode::Galerkin,
+                          1, 1e-2, &residual_file);
 
-        results.push_back(
-            {jump_value, bench_res.spectral_radii, bench_res.avg_gmres_iters,
-             bench_res.mg_asymptotic_rate});
+            results.push_back(bench_res);
+        }
     }
 
     residual_file.close();

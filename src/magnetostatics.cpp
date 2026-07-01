@@ -88,47 +88,6 @@ std::shared_ptr<mfem::SparseMatrix> MagOperator::assembleDec()
     return std::shared_ptr<mfem::SparseMatrix>(bmat.CreateMonolithic());
 }
 
-std::shared_ptr<mfem::SparseMatrix> MagOperator::assembleFem()
-{
-    mfem::MixedBilinearForm grad(
-        this->spaces_[0].get(), this->spaces_[1].get());
-    grad.AddDomainIntegrator(new mfem::MixedVectorGradientIntegrator());
-    grad.Assemble();
-    grad.Finalize();
-    auto Grad = std::unique_ptr<mfem::SparseMatrix>(grad.LoseMat());
-
-    mfem::BilinearForm curlcurl(this->spaces_[1].get());
-    curlcurl.AddDomainIntegrator(new mfem::CurlCurlIntegrator());
-    curlcurl.Assemble();
-    curlcurl.Finalize();
-    auto CurlCurl = std::unique_ptr<mfem::SparseMatrix>(curlcurl.LoseMat());
-
-    mfem::SparseMatrix zero0(this->getBlockSize(0));
-
-    if (bc_ == BCond::Essential)
-    {
-        Grad->EliminateCols(*this->essential_dof_masks_[0]);
-        for (auto k : *this->essential_dof_[1])
-            Grad->EliminateRow(k);
-        for (auto k : *this->essential_dof_[0])
-            zero0.Set(k, k, 1.0);
-        CurlCurl->EliminateCols(*this->essential_dof_masks_[1]);
-        for (auto k : *this->essential_dof_[1])
-            CurlCurl->EliminateRow(k, mfem::Operator::DiagonalPolicy::DIAG_ONE);
-    }
-    zero0.Finalize();
-
-    auto Div = std::unique_ptr<mfem::SparseMatrix>(mfem::Transpose(*Grad));
-
-    mfem::BlockMatrix bmat(this->block_offsets_);
-    bmat.SetBlock(0, 0, &zero0);
-    bmat.SetBlock(0, 1, Div.get());
-    bmat.SetBlock(1, 0, Grad.get());
-    bmat.SetBlock(1, 1, CurlCurl.get());
-
-    return std::shared_ptr<mfem::SparseMatrix>(bmat.CreateMonolithic());
-}
-
 // =======================================================================
 //                    MAGNETOSTATIC SMOOTHER
 // =======================================================================

@@ -38,7 +38,6 @@ public:
         const override;
 
     std::shared_ptr<mfem::SparseMatrix> assembleDec() override;
-    std::shared_ptr<mfem::SparseMatrix> assembleFem() override;
 };
 
 // =======================================================================
