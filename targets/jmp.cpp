@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "SpectraErrorOp.hpp"
 #include "hcurl_laplacian.hpp"
 #include "mesh.hpp"
 #include "mfem.hpp"
@@ -21,88 +22,14 @@ using namespace HCurlLaplacian;
 
 namespace
 {
-constexpr int kDim = 3;
-
 struct BenchResult
 {
     int          refinements;
     mfem::real_t mesh_width;
     int          dofs;
+    std::string  spectral_radii;
     mfem::real_t avg_gmres_iters;
     mfem::real_t mg_asymptotic_rate;
-};
-
-class InnerCubeScalarCoefficient : public mfem::Coefficient
-{
-private:
-    mfem::real_t background_;
-    mfem::real_t inner_value_;
-    mfem::real_t lo_;
-    mfem::real_t hi_;
-
-public:
-    InnerCubeScalarCoefficient(
-        mfem::real_t background,
-        mfem::real_t inner_value,
-        mfem::real_t inner_cube_size)
-        : background_(background),
-          inner_value_(inner_value),
-          lo_(0.5 - 0.5 * inner_cube_size),
-          hi_(0.5 + 0.5 * inner_cube_size)
-    {
-    }
-
-    mfem::real_t Eval(mfem::ElementTransformation& T,
-                      const mfem::IntegrationPoint& ip) override
-    {
-        mfem::Vector x(T.GetDimension());
-        T.Transform(ip, x);
-
-        const bool inside = (x[0] >= lo_ && x[0] <= hi_ && x[1] >= lo_ &&
-                             x[1] <= hi_ && x[2] >= lo_ && x[2] <= hi_);
-        return inside ? inner_value_ : background_;
-    }
-};
-
-class InnerCubeMatrixCoefficient : public mfem::MatrixCoefficient
-{
-private:
-    mfem::real_t background_;
-    mfem::real_t inner_value_;
-    mfem::real_t lo_;
-    mfem::real_t hi_;
-
-public:
-    InnerCubeMatrixCoefficient(
-        mfem::real_t background,
-        mfem::real_t inner_value,
-        mfem::real_t inner_cube_size)
-        : mfem::MatrixCoefficient(kDim),
-          background_(background),
-          inner_value_(inner_value),
-          lo_(0.5 - 0.5 * inner_cube_size),
-          hi_(0.5 + 0.5 * inner_cube_size)
-    {
-    }
-
-    void Eval(mfem::DenseMatrix& K,
-              mfem::ElementTransformation& T,
-              const mfem::IntegrationPoint& ip) override
-    {
-        mfem::Vector x(T.GetDimension());
-        T.Transform(ip, x);
-
-        const mfem::real_t value =
-            (x[0] >= lo_ && x[0] <= hi_ && x[1] >= lo_ && x[1] <= hi_ &&
-             x[2] >= lo_ && x[2] <= hi_)
-                ? inner_value_
-                : background_;
-
-        K.SetSize(kDim);
-        K = 0.0;
-        for (int i = 0; i < kDim; ++i)
-            K(i, i) = value;
-    }
 };
 
 struct CliOptions
@@ -133,13 +60,13 @@ void save_to_csv(const std::string& filename, const BenchResult& res)
 
     std::ofstream file(filename, std::ios::app);
     if (!exists)
-        file << "Refinements,mesh-width,DOFs,AvgGMRESIters,MGAsymptoticRate\n";
+        file << "Refinements,mesh-width,DOFs,SpectralRadii,AvgGMRESIters,MGAsymptoticRate\n";
 
     file << res.refinements << "," << std::scientific << std::setprecision(6)
-         << res.mesh_width << "," << res.dofs << "," << std::fixed
-         << std::setprecision(2) << res.avg_gmres_iters << ","
-         << std::scientific << std::setprecision(6) << res.mg_asymptotic_rate
-         << "\n";
+         << res.mesh_width << "," << res.dofs << ",\"" << res.spectral_radii
+         << "\"," << std::fixed << std::setprecision(2)
+         << res.avg_gmres_iters << "," << std::scientific
+         << std::setprecision(6) << res.mg_asymptotic_rate << "\n";
 }
 
 CliOptions parse_options(int argc, char* argv[])
@@ -205,9 +132,29 @@ BenchResult run_level(
     const int              mg_iters,
     const int              verbose,
     const BCond            bc,
-    const OperatorMode     mode)
+    const OperatorMode     mode,
+    const int              num_eigs = 1,
+    const mfem::real_t     eig_tol = 1e-2)
 {
     auto op = MG.getFinestOperator();
+
+    // Compute spectral radii (DEC mode)
+    std::stringstream ss_csv;
+    MG.setMode(OperatorMode::DEC);
+    op->setMode(OperatorMode::DEC);
+    auto start_v = op->getRandomVector(42 + level);
+    auto post = [&](mfem::Vector& x) {
+        mfem::BlockVector bx(x.GetData(), op->getBlockOffsets());
+        op->eliminateTrivialSolutionHarmonics(bx);
+        if (bc == BCond::Essential)
+            op->eliminateBC(bx);
+    };
+
+    auto [ew, ev] = errorOpEig(*op, MG, start_v, num_eigs, eig_tol, post);
+    for (int i = 0; i < ew.size(); ++i) {
+        mfem::real_t mag = std::abs(ew[i]);
+        ss_csv << mag << (i == ew.size() - 1 ? "" : " ");
+    }
 
     MG.setMode(OperatorMode::Galerkin);
     op->setMode(OperatorMode::Galerkin);
@@ -240,17 +187,18 @@ BenchResult run_level(
     const mfem::real_t avg_iters =
         static_cast<mfem::real_t>(total_iters) / std::max(1, num_runs);
 
+    MG.setMode(OperatorMode::DEC);
+    MG.setIterativeMode(true);
+    op->setMode(OperatorMode::DEC);
+
     mfem::real_t mg_rate = 1.0;
     if (mg_iters > 0)
     {
-        MG.setIterativeMode(true);
         mfem::BlockVector rhs(op->getBlockOffsets());
         mfem::BlockVector x = op->getRandomVector(54321 + level);
-        mfem::BlockVector x_true = op->getRandomVector(98765 + level);
-        op->eliminateTrivialSolutionHarmonics(x_true);
-        if (bc == BCond::Essential)
-            op->eliminateBC(x_true);
-        op->applyFemOp(x_true, rhs);
+        mfem::BlockVector rhs_rand = op->getRandomVector(12345 + level);
+        op->eliminateTrivialSolutionHarmonics(rhs_rand);
+        op->applyDecOp(rhs_rand, rhs);
 
         mfem::BlockVector res = op->createBlockVector();
         const mfem::real_t rhs_norm = std::max<mfem::real_t>(rhs.Norml2(), 1e-16);
@@ -330,10 +278,14 @@ BenchResult run_level(
         }
 
         MG.setIterativeMode(false);
+        MG.setMode(OperatorMode::Galerkin);
+        op->setMode(OperatorMode::Galerkin);
     }
 
     return {
-        level, op->getMesh()->meshWidth(), op->Height(), avg_iters, mg_rate};
+        level, op->getMesh()->meshWidth(), op->Height(), ss_csv.str(),
+        avg_iters, mg_rate
+    };
 }
 
 }  // namespace
@@ -388,10 +340,29 @@ int main(int argc, char* argv[])
     mfem::Mesh mfem_mesh(opts.mesh_file.c_str());
     auto       mesh = std::make_shared<Mesh>(std::move(mfem_mesh));
 
-    auto scalar_jump = std::make_shared<InnerCubeScalarCoefficient>(
-        1.0, opts.jump_value, opts.inner_cube_size);
-    auto matrix_jump = std::make_shared<InnerCubeMatrixCoefficient>(
-        1.0, opts.jump_value, opts.inner_cube_size);
+    const mfem::real_t lo = 0.5 - 0.5 * opts.inner_cube_size;
+    const mfem::real_t hi = 0.5 + 0.5 * opts.inner_cube_size;
+
+    auto scalar_jump = std::make_shared<mfem::FunctionCoefficient>(
+        [lo, hi, jump = opts.jump_value](const mfem::Vector& x) {
+            return (x[0] >= lo && x[0] <= hi && x[1] >= lo && x[1] <= hi &&
+                    x[2] >= lo && x[2] <= hi)
+                       ? jump
+                       : 1.0;
+        });
+
+    auto matrix_jump = std::make_shared<mfem::MatrixFunctionCoefficient>(
+        3, [lo, hi, jump = opts.jump_value](const mfem::Vector& x,
+                                              mfem::DenseMatrix& K) {
+            const mfem::real_t value =
+                (x[0] >= lo && x[0] <= hi && x[1] >= lo && x[1] <= hi &&
+                 x[2] >= lo && x[2] <= hi)
+                    ? jump
+                    : 1.0;
+            K.SetSize(3);
+            K = 0.0;
+            K(0, 0) = K(1, 1) = K(2, 2) = value;
+        });
 
     ScalarMassCoefficientArray scalar_coeffs{};
     MatrixMassCoefficientArray matrix_coeffs{};
@@ -409,10 +380,11 @@ int main(int argc, char* argv[])
         matrix_coeffs);
 
     std::cout << std::setw(6) << "Lvl" << std::right << std::setw(15)
-              << "Unknowns" << std::right << std::setw(15) << "h"
-              << std::right << std::setw(18) << "Avg GMRES Iters"
-              << std::right << std::setw(18) << "MG Rate" << "\n";
-    std::cout << std::string(72, '-') << "\n";
+              << "Unknowns" << std::right << std::setw(12) << "h"
+              << std::right << std::setw(16) << "Spectral Radii"
+              << std::right << std::setw(16) << "Avg GMRES Iters"
+              << std::right << std::setw(14) << "MG Rate" << "\n";
+    std::cout << std::string(80, '-') << "\n";
 
     for (int lvl = 0; lvl <= opts.max_ref; ++lvl)
     {
@@ -426,15 +398,16 @@ int main(int argc, char* argv[])
 
         std::cout << std::left << std::setw(6) << res.refinements << std::right
                   << std::setw(15) << res.dofs << std::right << std::scientific
-                  << std::setprecision(4) << std::setw(15) << res.mesh_width
+                  << std::setprecision(4) << std::setw(12) << res.mesh_width
+                  << std::right << std::setw(16) << res.spectral_radii
                   << std::right << std::fixed << std::setprecision(2)
-                  << std::setw(18) << res.avg_gmres_iters << std::right
-                  << std::setw(18) << res.mg_asymptotic_rate << "\n";
+                  << std::setw(16) << res.avg_gmres_iters << std::right
+                  << std::setw(14) << res.mg_asymptotic_rate << "\n";
 
         if (lvl < opts.max_ref)
             MG.addRefinedLevel();
     }
 
-    std::cout << std::string(72, '=') << "\n";
+    std::cout << std::string(80, '=') << "\n";
     return 0;
 }
